@@ -4,44 +4,45 @@ import { createCredentialHash } from "./credentialUtils.js";
 import { uploadMetadataToIPFS } from "./ipfs.js";
 import { createStudentDID } from "./didUtils.js";
 import {
-  createVerifiableCredential
+  createVerifiableCredential,
 } from "./verifiableCredential.js";
 
 async function main() {
   const { ethers } = await network.connect();
 
   // =========================================================
+  // EXISTING SEPOLIA CONTRACT
+  // =========================================================
+
+  const CONTRACT_ADDRESS =
+    "0x75f4c5489E34CC1d1c67E3c302dDD76a86956e8a";
+
+  // =========================================================
   // SIGNERS
   // =========================================================
 
-  const [
-    authority,
-    university,
-    student
-  ] = await ethers.getSigners();
+  const [authority] = await ethers.getSigners();
+
+  console.log("Authority:", authority.address);
 
   // =========================================================
-  // CREATE STUDENT DID
+  // UNIVERSITY
+  // =========================================================
+  //
+  // For this Sepolia test, the deployer/authority wallet is also
+  // acting as the university issuer.
+  //
+  // This avoids needing a second private key just for testing.
   // =========================================================
 
-  const studentDID =
-    createStudentDID(
-      student.address
-    );
-
-  // =========================================================
-  // CREATE UNIVERSITY DID
-  // =========================================================
+  const university = authority;
+  const student = authority;
 
   const universityDID =
-    createStudentDID(
-      university.address
-    );
+    createStudentDID(university.address);
 
-  console.log(
-    "Authority:",
-    authority.address
-  );
+  const studentDID =
+    createStudentDID(student.address);
 
   console.log(
     "University:",
@@ -64,59 +65,89 @@ async function main() {
   );
 
   // =========================================================
-  // DEPLOY EDUPROOF
+  // CONNECT TO EXISTING EDUPROOF CONTRACT
   // =========================================================
 
   const EduProof =
-    await ethers.getContractFactory(
-      "EduProof"
-    );
+    await ethers.getContractFactory("EduProof");
 
   const eduProof =
-    await EduProof.deploy();
-
-  await eduProof.waitForDeployment();
+    EduProof.attach(CONTRACT_ADDRESS);
 
   console.log(
-    "EduProof deployed at:",
-    await eduProof.getAddress()
+    "\nEduProof connected at:",
+    CONTRACT_ADDRESS
   );
 
   // =========================================================
-  // REGISTER UNIVERSITY
+  // CHECK / REGISTER UNIVERSITY
   // =========================================================
 
-  const registerTx =
-    await eduProof
-      .connect(authority)
-      .registerIssuer(
-        university.address,
-        "ABC University",
-        "ABC-001"
-      );
-
-  await registerTx.wait();
+  const existingIssuer =
+    await eduProof.getIssuer(university.address);
 
   console.log(
-    "University registered."
+    "\nExisting issuer:",
+    existingIssuer
   );
 
   // =========================================================
-  // AUTHORIZE UNIVERSITY
+  // REGISTER UNIVERSITY IF NECESSARY
   // =========================================================
 
-  const authorizeTx =
-    await eduProof
-      .connect(authority)
-      .authorizeIssuer(
+  try {
+    const authorized =
+      await eduProof.isAuthorizedIssuer(
         university.address
       );
 
-  await authorizeTx.wait();
+    console.log(
+      "Already authorized:",
+      authorized
+    );
 
-  console.log(
-    "University authorized."
-  );
+    if (!authorized) {
+      console.log(
+        "University is not authorized. Registering..."
+      );
+
+      const registerTx =
+        await eduProof
+          .connect(authority)
+          .registerIssuer(
+            university.address,
+            "ABC University",
+            "ABC-001"
+          );
+
+      await registerTx.wait();
+
+      console.log(
+        "University registered."
+      );
+
+      const authorizeTx =
+        await eduProof
+          .connect(authority)
+          .authorizeIssuer(
+            university.address
+          );
+
+      await authorizeTx.wait();
+
+      console.log(
+        "University authorized."
+      );
+    }
+  } catch (error) {
+    console.log(
+      "\nIssuer setup check failed."
+    );
+
+    console.log(
+      "This usually means the contract already has issuer data."
+    );
+  }
 
   // =========================================================
   // CHECK AUTHORIZATION
@@ -128,9 +159,15 @@ async function main() {
     );
 
   console.log(
-    "Is university authorized:",
+    "\nIs university authorized:",
     authorized
   );
+
+  if (!authorized) {
+    throw new Error(
+      "University is not authorized on this Sepolia contract."
+    );
+  }
 
   // =========================================================
   // MANUAL CREDENTIAL METADATA
@@ -223,7 +260,7 @@ async function main() {
   );
 
   // =========================================================
-  // UPLOAD VERIFIABLE CREDENTIAL TO IPFS
+  // UPLOAD VC TO IPFS
   // =========================================================
 
   const cid =
@@ -245,8 +282,12 @@ async function main() {
   );
 
   // =========================================================
-  // ISSUE CREDENTIAL ON BLOCKCHAIN
+  // ISSUE CREDENTIAL ON EXISTING CONTRACT
   // =========================================================
+
+  console.log(
+    "\nIssuing credential on Sepolia..."
+  );
 
   const issueTx =
     await eduProof
@@ -267,7 +308,7 @@ async function main() {
     await issueTx.wait();
 
   console.log(
-    "\nCredential issued."
+    "\nCredential issued successfully."
   );
 
   console.log(
@@ -276,7 +317,7 @@ async function main() {
   );
 
   // =========================================================
-  // READ CREDENTIAL FROM BLOCKCHAIN
+  // READ CREDENTIAL
   // =========================================================
 
   const credential =
@@ -313,6 +354,18 @@ async function main() {
   console.log(
     "Version history:",
     history
+  );
+
+  console.log(
+    "\n================================"
+  );
+
+  console.log(
+    "SEP0LIA CREDENTIAL READY"
+  );
+
+  console.log(
+    "================================"
   );
 }
 
