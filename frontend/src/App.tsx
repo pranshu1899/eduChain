@@ -9,6 +9,12 @@ import {
 import "./App.css";
 
 import UniversityDashboard from "./pages/University/UniversityDashboard";
+import IssueCredential from "./pages/University/IssueCredential";
+import UniversityCredentials from "./pages/University/UniversityCredentials";
+import UniversityCredentialDetails from "./pages/University/UniversityCredentialDetails";
+import UniversityVerify from "./pages/University/UniversityVerify";
+import UniversityRevokeCredential from "./pages/University/UniversityRevokeCredential";
+import UniversityAnalytics from "./pages/University/UniversityAnalytics";
 
 /* =====================================================
    LANDING PAGE
@@ -17,21 +23,29 @@ import UniversityDashboard from "./pages/University/UniversityDashboard";
 function LandingPage() {
   return (
     <div className="landing-page">
+
       <header className="landing-header">
         <div className="brand">
-          <div className="brand-mark">E</div>
+
+          <div className="brand-mark">
+            E
+          </div>
 
           <div>
-            <div className="brand-name">EduProof</div>
+            <div className="brand-name">
+              EduProof
+            </div>
 
             <div className="brand-subtitle">
               Decentralized Academic Credentials
             </div>
           </div>
+
         </div>
       </header>
 
       <main className="landing-main">
+
         <div className="landing-eyebrow">
           EDUPROOF PLATFORM
         </div>
@@ -41,24 +55,30 @@ function LandingPage() {
         </h1>
 
         <p className="landing-description">
-          Select the interface that matches what you want to do.
-          Each role has its own focused workspace.
+          Select the interface that matches what you
+          want to do. Each role has its own focused
+          workspace.
         </p>
 
         <div className="role-grid">
+
           {/* UNIVERSITY */}
 
           <Link
             to="/university"
             className="role-card university"
           >
-            <div className="role-icon">🏛️</div>
+            <div className="role-icon">
+              🏛️
+            </div>
 
             <div className="role-label">
               ISSUER
             </div>
 
-            <h2>University</h2>
+            <h2>
+              University
+            </h2>
 
             <p>
               Issue, manage, update and verify academic
@@ -77,17 +97,21 @@ function LandingPage() {
             to="/student"
             className="role-card student"
           >
-            <div className="role-icon">🎓</div>
+            <div className="role-icon">
+              🎓
+            </div>
 
             <div className="role-label">
               CREDENTIAL OWNER
             </div>
 
-            <h2>Student</h2>
+            <h2>
+              Student
+            </h2>
 
             <p>
-              View your credentials, versions, status and
-              blockchain proof.
+              View your credentials, versions, status
+              and blockchain proof.
             </p>
 
             <div className="role-action">
@@ -102,17 +126,21 @@ function LandingPage() {
             to="/verify"
             className="role-card verifier"
           >
-            <div className="role-icon">🔍</div>
+            <div className="role-icon">
+              🔍
+            </div>
 
             <div className="role-label">
               PUBLIC VERIFIER
             </div>
 
-            <h2>Verifier</h2>
+            <h2>
+              Verifier
+            </h2>
 
             <p>
-              Verify academic credentials without needing
-              a university wallet.
+              Verify academic credentials without
+              needing a university wallet.
             </p>
 
             <div className="role-action">
@@ -120,6 +148,7 @@ function LandingPage() {
               <span>→</span>
             </div>
           </Link>
+
         </div>
       </main>
     </div>
@@ -133,7 +162,9 @@ function LandingPage() {
 function StudentPage() {
   return (
     <div className="placeholder-page">
+
       <div className="placeholder-card">
+
         <div className="placeholder-icon">
           🎓
         </div>
@@ -142,7 +173,9 @@ function StudentPage() {
           STUDENT PORTAL
         </div>
 
-        <h1>Student Dashboard</h1>
+        <h1>
+          Student Dashboard
+        </h1>
 
         <p>
           Student workspace will be built here.
@@ -154,19 +187,23 @@ function StudentPage() {
         >
           ← Back to role selection
         </Link>
+
       </div>
+
     </div>
   );
 }
 
 /* =====================================================
-   VERIFIER PLACEHOLDER
+   PUBLIC VERIFIER PLACEHOLDER
    ===================================================== */
 
 function VerifierPage() {
   return (
     <div className="placeholder-page">
+
       <div className="placeholder-card">
+
         <div className="placeholder-icon">
           🔍
         </div>
@@ -175,10 +212,13 @@ function VerifierPage() {
           VERIFICATION CENTER
         </div>
 
-        <h1>Verify Credential</h1>
+        <h1>
+          Verify Credential
+        </h1>
 
         <p>
-          Public verification workspace will be built here.
+          Public verification workspace will be
+          built here.
         </p>
 
         <Link
@@ -187,7 +227,9 @@ function VerifierPage() {
         >
           ← Back to role selection
         </Link>
+
       </div>
+
     </div>
   );
 }
@@ -199,43 +241,115 @@ function VerifierPage() {
 function App() {
   return (
     <BrowserRouter>
+
       <Routes>
-        {/* Landing */}
+
+        {/* =================================================
+            LANDING
+            ================================================= */}
 
         <Route
           path="/"
           element={<LandingPage />}
         />
 
-        {/* University */}
+        {/* =================================================
+            UNIVERSITY DASHBOARD
+            ================================================= */}
 
         <Route
           path="/university"
           element={<UniversityDashboard />}
         />
 
-        {/* University nested routes */}
+        {/* =================================================
+            ISSUE CREDENTIAL
+            ================================================= */}
+
+        <Route
+          path="/university/issue"
+          element={<IssueCredential />}
+        />
+
+        {/* =================================================
+            UNIVERSITY CREDENTIALS
+            ================================================= */}
+
+        <Route
+          path="/university/credentials"
+          element={<UniversityCredentials />}
+        />
+
+        {/* =================================================
+            CREDENTIAL DETAILS
+            ================================================= */}
+
+        <Route
+          path="/university/credentials/:id"
+          element={
+            <UniversityCredentialDetails />
+          }
+        />
+
+        {/* =================================================
+            VERIFY CREDENTIAL
+            ================================================= */}
+
+        <Route
+          path="/university/verify"
+          element={<UniversityVerify />}
+        />
+
+        {/* =================================================
+            REVOKE CREDENTIAL
+            ================================================= */}
+
+        <Route
+          path="/university/revoke"
+          element={
+            <UniversityRevokeCredential />
+          }
+        />
+
+        {/* =================================================
+            UNIVERSITY ANALYTICS
+            ================================================= */}
+
+        <Route
+          path="/university/analytics"
+          element={<UniversityAnalytics />}
+        />
+
+        {/* =================================================
+            UNIVERSITY FALLBACK
+            ================================================= */}
 
         <Route
           path="/university/*"
           element={<UniversityDashboard />}
         />
 
-        {/* Student */}
+        {/* =================================================
+            STUDENT
+            ================================================= */}
 
         <Route
           path="/student/*"
           element={<StudentPage />}
         />
 
-        {/* Public verifier */}
+        {/* =================================================
+            PUBLIC VERIFIER
+            ================================================= */}
 
         <Route
           path="/verify/*"
           element={<VerifierPage />}
         />
 
-        {/* Unknown route */}
+        {/* =================================================
+            UNKNOWN ROUTES
+            ================================================= */}
 
         <Route
           path="*"
@@ -246,7 +360,9 @@ function App() {
             />
           }
         />
+
       </Routes>
+
     </BrowserRouter>
   );
 }

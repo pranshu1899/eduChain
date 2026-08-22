@@ -1237,3 +1237,1936 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   UNIVERSITY TOPBAR
+   ========================================================= */
+
+.university-topbar {
+  height: 78px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 30px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 13, 29, 0.96),
+      rgba(8, 11, 24, 0.92)
+    );
+
+  backdrop-filter: blur(18px);
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* ---------- breadcrumb ---------- */
+
+.university-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #8b93ad;
+
+  font-size: 13px;
+}
+
+.university-breadcrumb a {
+  color: #8b93ad;
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.university-breadcrumb a:hover {
+  color: #a9a4ff;
+}
+
+.university-breadcrumb span {
+  color: #444b63;
+}
+
+.university-breadcrumb strong {
+  color: #eef0f8;
+  font-weight: 700;
+}
+
+/* ---------- right side ---------- */
+
+.university-network {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+/* ---------- network ---------- */
+
+.network-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.network-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #6d63ff;
+
+  box-shadow:
+    0 0 0 4px rgba(109, 99, 255, 0.1),
+    0 0 14px rgba(109, 99, 255, 0.6);
+}
+
+.network-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.network-label,
+.wallet-label {
+  color: #656d88;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.network-info strong {
+  color: #e7e9f2;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---------- wallet ---------- */
+
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 7px 10px 7px 7px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.wallet-avatar {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 auto;
+
+  border-radius: 10px;
+
+  color: #b9b3ff;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(99, 91, 255, 0.24),
+      rgba(99, 91, 255, 0.08)
+    );
+
+  border: 1px solid rgba(115, 106, 255, 0.2);
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wallet-details {
+  min-width: 118px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wallet-details strong {
+  color: #eef0f8;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wallet-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 9px;
+
+  border-radius: 999px;
+
+  color: #81889f;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.wallet-status.connected {
+  color: #6ee7b7;
+
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+/* =========================================================
+   UNIVERSITY DASHBOARD RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .university-topbar {
+    padding: 0 18px;
+  }
+
+  .network-info {
+    display: none;
+  }
+
+  .university-network {
+    gap: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .university-topbar {
+    height: auto;
+    min-height: 68px;
+
+    padding: 10px 14px;
+  }
+
+  .university-breadcrumb {
+    font-size: 11px;
+  }
+
+  .wallet-details {
+    min-width: 90px;
+  }
+
+  .wallet-status {
+    padding: 5px 7px;
+  }
+}
+
+
+.blockchain-error {
+  margin-bottom: 20px;
+  padding: 13px 16px;
+
+  border: 1px solid rgba(251, 113, 133, 0.2);
+  border-radius: 12px;
+
+  color: #fda4af;
+  background: rgba(251, 113, 133, 0.07);
+
+  font-size: 12px;
+}
+
+.university-wallet-info {
+  margin-top: 18px;
+
+  color: #69728c;
+
+  font-size: 11px;
+}
+
+.university-wallet-info code {
+  margin-left: 6px;
+
+  color: #a8a3ff;
+
+  font-family: monospace;
+}
+
+
+
+
+/* =========================================================
+   UNIVERSITY CREDENTIAL CARDS
+   ========================================================= */
+
+.university-credentials-list {
+  display: grid;
+  gap: 12px;
+}
+
+.university-credential-card {
+  position: relative;
+
+  padding: 18px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.018)
+    );
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.university-credential-card:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(118, 108, 255, 0.3);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(118, 108, 255, 0.07),
+      rgba(255, 255, 255, 0.025)
+    );
+}
+
+.credential-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 14px;
+}
+
+.credential-card-eyebrow {
+  color: #68718c;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+.credential-card-top h3 {
+  margin: 5px 0 0;
+
+  color: #f0f1f7;
+
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.credential-degree {
+  margin-top: 4px;
+
+  color: #8b93ab;
+
+  font-size: 11px;
+}
+
+.credential-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 9px;
+
+  border-radius: 999px;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+.credential-status-dot {
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+.credential-status.active {
+  color: #62e6ad;
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.credential-status.revoked {
+  color: #fb8498;
+  background: rgba(251, 113, 133, 0.08);
+}
+
+.credential-status.superseded {
+  color: #f3c653;
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.credential-status.unknown {
+  color: #9aa2b8;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.credential-details {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.5fr)
+    minmax(0, 1fr)
+    100px
+    60px;
+
+  gap: 12px;
+
+  margin-top: 16px;
+  padding-top: 14px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.credential-details > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.credential-details span {
+  color: #626b84;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credential-details strong {
+  overflow: hidden;
+
+  color: #b9bfd0;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credential-view-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+
+  margin-top: 14px;
+  padding: 9px 11px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+
+  color: #a8a2ff;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.credential-view-button:hover {
+  background: rgba(118, 108, 255, 0.08);
+
+  border-color: rgba(118, 108, 255, 0.2);
+}
+
+.credential-view-button span {
+  font-size: 13px;
+}
+
+.credential-loading-spinner {
+  width: 30px;
+  height: 30px;
+
+  margin: 0 auto 14px;
+
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-top-color: #756cff;
+
+  border-radius: 50%;
+
+  animation: credential-spin 0.8s linear infinite;
+}
+
+@keyframes credential-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 800px) {
+  .credential-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .credential-card-top {
+    flex-direction: column;
+  }
+
+  .credential-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   CREDENTIAL DETAILS PAGE
+   ========================================================= */
+
+.credential-details-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-bottom: 26px;
+}
+
+.credential-details-header h1 {
+  margin: 10px 0 8px;
+
+  color: #f3f4f8;
+
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.credential-details-header p {
+  margin: 0;
+
+  color: #737c96;
+
+  font-size: 13px;
+}
+
+.credential-back-link {
+  display: inline-block;
+
+  margin-bottom: 16px;
+
+  color: #8881ff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.credential-back-link:hover {
+  color: #aaa5ff;
+}
+
+.credential-details-page {
+  display: grid;
+  gap: 18px;
+}
+
+.credential-details-card,
+.credential-proof-card,
+.credential-history-card,
+.credential-identifiers-card {
+  padding: 24px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20, 24, 43, 0.94),
+      rgba(11, 14, 28, 0.94)
+    );
+
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.credential-details-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 22px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.credential-details-card-header h2 {
+  margin: 6px 0 4px;
+
+  color: #f2f3f8;
+
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 25px;
+}
+
+.credential-details-card-header p {
+  margin: 0;
+
+  color: #78819a;
+
+  font-size: 12px;
+}
+
+.credential-info-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-top: 20px;
+}
+
+.credential-info-item {
+  min-width: 0;
+
+  padding: 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.credential-info-item span {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #626b84;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credential-info-item strong {
+  display: block;
+
+  overflow-wrap: anywhere;
+
+  color: #c7cbd8;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.credential-section-heading {
+  margin-bottom: 18px;
+}
+
+.credential-section-heading h2 {
+  margin: 5px 0 5px;
+
+  color: #f0f1f6;
+
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 20px;
+}
+
+.credential-section-heading p {
+  margin: 0;
+
+  color: #737c96;
+
+  font-size: 11px;
+}
+
+.credential-proof-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.credential-proof-item {
+  min-width: 0;
+
+  padding: 15px;
+
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 12px;
+
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.credential-proof-item.full {
+  grid-column: 1 / -1;
+}
+
+.credential-proof-item span {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #626b84;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credential-proof-item code {
+  display: block;
+
+  overflow-wrap: anywhere;
+
+  color: #aaa5ff;
+
+  font-family: "SFMono-Regular", Consolas, monospace;
+
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.credential-verification-actions {
+  display: flex;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-top: 18px;
+}
+
+.signature-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 12px;
+
+  border-radius: 10px;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.signature-result span {
+  font-size: 14px;
+}
+
+.signature-result.valid {
+  color: #68e5ae;
+
+  background: rgba(52, 211, 153, 0.08);
+
+  border: 1px solid rgba(52, 211, 153, 0.14);
+}
+
+.signature-result.invalid {
+  color: #fb8498;
+
+  background: rgba(251, 113, 133, 0.08);
+
+  border: 1px solid rgba(251, 113, 133, 0.14);
+}
+
+.credential-history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.credential-history-item {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 11px;
+
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.history-number {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 auto;
+
+  border-radius: 8px;
+
+  color: #a7a1ff;
+
+  background: rgba(118, 108, 255, 0.1);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.credential-history-item > div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.credential-history-item strong {
+  color: #c9ccda;
+
+  font-size: 11px;
+}
+
+.credential-history-item span {
+  color: #69728a;
+
+  font-size: 9px;
+}
+
+.history-current {
+  margin-left: auto;
+
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  color: #65e4ac;
+
+  background: rgba(52, 211, 153, 0.08);
+
+  font-size: 7px !important;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+.credential-history-empty {
+  padding: 20px;
+
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+
+  color: #69728a;
+
+  text-align: center;
+
+  font-size: 11px;
+}
+
+.credential-details-loading {
+  min-height: 280px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.02);
+
+  text-align: center;
+}
+
+.credential-details-loading h3 {
+  margin: 0 0 6px;
+
+  color: #d8dae4;
+
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.credential-details-loading p {
+  margin: 0;
+
+  color: #69728a;
+
+  font-size: 11px;
+}
+
+.credential-details-loading .credential-loading-spinner {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .credential-info-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .credential-details-card-header {
+    flex-direction: column;
+  }
+
+  .credential-info-grid,
+  .credential-proof-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credential-proof-item.full {
+    grid-column: auto;
+  }
+
+  .credential-details-card,
+  .credential-proof-card,
+  .credential-history-card,
+  .credential-identifiers-card {
+    padding: 18px;
+  }
+}
+
+
+/* =====================================================
+   CREDENTIAL DETAILS PAGE
+   ===================================================== */
+
+.credential-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.credential-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 18px;
+  color: rgba(245, 247, 255, 0.55);
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.credential-back-link:hover {
+  color: #ffffff;
+}
+
+.credential-details-header h1 {
+  margin: 8px 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.credential-details-header p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.55);
+  font-size: 14px;
+}
+
+/* =====================================================
+   DETAILS LOADING
+   ===================================================== */
+
+.credential-details-loading {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.025);
+  text-align: center;
+}
+
+.credential-details-loading h3 {
+  margin: 18px 0 6px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.credential-details-loading p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.48);
+  font-size: 13px;
+}
+
+.credential-loading-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #817aff;
+  border-radius: 50%;
+  animation: credential-spin 0.8s linear infinite;
+}
+
+@keyframes credential-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================================
+   DETAILS PAGE
+   ===================================================== */
+
+.credential-details-page {
+  display: grid;
+  gap: 20px;
+}
+
+/* =====================================================
+   MAIN CREDENTIAL CARD
+   ===================================================== */
+
+.credential-details-card {
+  position: relative;
+  overflow: hidden;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      rgba(99, 91, 255, 0.16),
+      transparent 34%
+    ),
+    rgba(255, 255, 255, 0.035);
+}
+
+.credential-details-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.025),
+      transparent 70%
+    );
+}
+
+.credential-details-card-header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.credential-card-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #9690ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.credential-details-card-header h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 30px;
+  letter-spacing: -0.025em;
+}
+
+.credential-details-card-header p {
+  margin: 7px 0 0;
+  color: rgba(245, 247, 255, 0.55);
+  font-size: 14px;
+}
+
+/* =====================================================
+   STATUS
+   ===================================================== */
+
+.credential-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.credential-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.credential-status.active {
+  color: #65e6a0;
+  background: rgba(101, 230, 160, 0.08);
+  border-color: rgba(101, 230, 160, 0.2);
+}
+
+.credential-status.revoked {
+  color: #ff7070;
+  background: rgba(255, 112, 112, 0.08);
+  border-color: rgba(255, 112, 112, 0.2);
+}
+
+.credential-status.superseded {
+  color: #ffc66d;
+  background: rgba(255, 198, 109, 0.08);
+  border-color: rgba(255, 198, 109, 0.2);
+}
+
+.credential-status.unknown {
+  color: #aab0c5;
+  background: rgba(170, 176, 197, 0.08);
+}
+
+/* =====================================================
+   CREDENTIAL INFO GRID
+   ===================================================== */
+
+.credential-info-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 26px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.credential-info-item {
+  min-width: 0;
+  padding: 18px;
+  background: rgba(7, 9, 20, 0.7);
+}
+
+.credential-info-item span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(245, 247, 255, 0.4);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.credential-info-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #f5f7ff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   PROOF CARD
+   ===================================================== */
+
+.credential-proof-card,
+.credential-history-card,
+.credential-identifiers-card {
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.credential-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.credential-section-heading h2 {
+  margin: 7px 0 6px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+}
+
+.credential-section-heading p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.48);
+  font-size: 13px;
+}
+
+/* =====================================================
+   PROOF DATA
+   ===================================================== */
+
+.credential-proof-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.credential-proof-item {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.credential-proof-item.full {
+  grid-column: 1 / -1;
+}
+
+.credential-proof-item span {
+  display: block;
+  margin-bottom: 9px;
+  color: rgba(245, 247, 255, 0.4);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.credential-proof-item code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #bfc5ff;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* =====================================================
+   VERIFICATION
+   ===================================================== */
+
+.credential-verification-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.signature-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.signature-result span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.signature-result.valid {
+  color: #6df0a6;
+  background: rgba(109, 240, 166, 0.08);
+  border: 1px solid rgba(109, 240, 166, 0.16);
+}
+
+.signature-result.valid span {
+  background: rgba(109, 240, 166, 0.16);
+}
+
+.signature-result.invalid {
+  color: #ff7777;
+  background: rgba(255, 119, 119, 0.08);
+  border: 1px solid rgba(255, 119, 119, 0.16);
+}
+
+.signature-result.invalid span {
+  background: rgba(255, 119, 119, 0.16);
+}
+
+/* =====================================================
+   VERSION HISTORY
+   ===================================================== */
+
+.credential-history-list {
+  position: relative;
+  display: grid;
+  gap: 10px;
+}
+
+.credential-history-list::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 18px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.credential-history-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 10px 14px 10px 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.history-number {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  margin-left: 0;
+  place-items: center;
+  border: 1px solid rgba(129, 122, 255, 0.35);
+  border-radius: 50%;
+  color: #a9a4ff;
+  background: #101226;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.credential-history-item > div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.credential-history-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.credential-history-item span:not(.history-current) {
+  display: block;
+  margin-top: 4px;
+  color: rgba(245, 247, 255, 0.42);
+  font-size: 11px;
+}
+
+.history-current {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: #69e8a1;
+  background: rgba(105, 232, 161, 0.08);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.credential-history-empty {
+  padding: 35px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: rgba(245, 247, 255, 0.45);
+  text-align: center;
+  font-size: 13px;
+}
+
+/* =====================================================
+   IDENTIFIERS
+   ===================================================== */
+
+.credential-identifiers-card .credential-info-grid {
+  margin-top: 0;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 900px) {
+  .credential-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .credential-details-card-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .credential-details-card,
+  .credential-proof-card,
+  .credential-history-card,
+  .credential-identifiers-card {
+    padding: 20px;
+    border-radius: 17px;
+  }
+
+  .credential-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credential-details-card-header h2 {
+    font-size: 25px;
+  }
+
+  .credential-details-header h1 {
+    font-size: 32px;
+  }
+
+  .credential-verification-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .credential-verification-actions .primary-button {
+    width: 100%;
+  }
+
+  .credential-history-item {
+    padding-right: 10px;
+  }
+
+  .history-current {
+    display: none;
+  }
+}
+
+
+/* =====================================================
+   UNIVERSITY ANALYTICS
+   ===================================================== */
+
+.analytics-connect-card,
+.analytics-issuer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      rgba(99, 91, 255, 0.12),
+      transparent 35%
+    ),
+    rgba(255, 255, 255, 0.03);
+}
+
+.analytics-connect-card {
+  justify-content: flex-start;
+}
+
+.analytics-connect-icon,
+.analytics-institution-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(129, 122, 255, 0.2);
+  border-radius: 16px;
+  color: #a49fff;
+  background: rgba(129, 122, 255, 0.08);
+  font-size: 25px;
+}
+
+.analytics-connect-card h2,
+.analytics-issuer-card h2 {
+  margin: 6px 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+}
+
+.analytics-connect-card p,
+.analytics-issuer-card p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.5);
+  font-size: 13px;
+}
+
+.analytics-issuer-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.analytics-issuer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.analytics-issuer-meta > div {
+  min-width: 120px;
+}
+
+.analytics-issuer-meta span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(245, 247, 255, 0.38);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.analytics-issuer-meta strong {
+  font-size: 12px;
+}
+
+.analytics-authorized {
+  color: #68e6a0;
+}
+
+.analytics-not-authorized {
+  color: #ff7777;
+}
+
+.analytics-status.authorized {
+  color: #68e6a0;
+}
+
+.analytics-status.suspended {
+  color: #ff7777;
+}
+
+.analytics-status.registered {
+  color: #ffc66d;
+}
+
+/* =====================================================
+   ANALYTICS SECTION
+   ===================================================== */
+
+.analytics-section {
+  margin-bottom: 24px;
+}
+
+.analytics-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.analytics-section-heading h2 {
+  margin: 6px 0 4px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+}
+
+.analytics-section-heading p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.46);
+  font-size: 12px;
+}
+
+.analytics-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(101, 230, 160, 0.15);
+  border-radius: 999px;
+  color: #69e8a1;
+  background: rgba(101, 230, 160, 0.06);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.analytics-live-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* =====================================================
+   STAT CARDS
+   ===================================================== */
+
+.analytics-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 160px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.analytics-stat-card::after {
+  content: "";
+  position: absolute;
+  right: -35px;
+  bottom: -50px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  opacity: 0.08;
+  background: currentColor;
+  filter: blur(15px);
+}
+
+.analytics-stat-card.purple {
+  color: #9a94ff;
+}
+
+.analytics-stat-card.blue {
+  color: #67c9ff;
+}
+
+.analytics-stat-card.green {
+  color: #6be5a0;
+}
+
+.analytics-stat-card.red {
+  color: #ff7676;
+}
+
+.analytics-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.analytics-stat-top > span {
+  color: rgba(245, 247, 255, 0.42);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.analytics-stat-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  font-weight: 800;
+}
+
+.analytics-stat-card > strong {
+  display: block;
+  margin-top: 22px;
+  color: #f5f7ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 34px;
+}
+
+.analytics-stat-card > p {
+  margin: 5px 0 0;
+  color: rgba(245, 247, 255, 0.42);
+  font-size: 11px;
+}
+
+/* =====================================================
+   CONTENT GRID
+   ===================================================== */
+
+.analytics-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.analytics-breakdown-panel,
+.analytics-metrics-panel,
+.analytics-global-panel {
+  min-width: 0;
+}
+
+/* =====================================================
+   BAR BREAKDOWN
+   ===================================================== */
+
+.analytics-bars {
+  display: grid;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.analytics-bar-row {
+  display: grid;
+  gap: 9px;
+}
+
+.analytics-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.analytics-bar-label span {
+  color: rgba(245, 247, 255, 0.58);
+  font-size: 12px;
+}
+
+.analytics-bar-label strong {
+  font-size: 12px;
+}
+
+.analytics-bar-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.analytics-bar-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  transition: width 0.5s ease;
+}
+
+.analytics-bar-fill.issued {
+  background: #817aff;
+}
+
+.analytics-bar-fill.updated {
+  background: #4ebeff;
+}
+
+.analytics-bar-fill.revoked {
+  background: #ff6f78;
+}
+
+.analytics-loading {
+  display: flex;
+  min-height: 260px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.analytics-loading p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.45);
+  font-size: 12px;
+}
+
+/* =====================================================
+   INSIGHTS
+   ===================================================== */
+
+.analytics-insight-list {
+  display: grid;
+  gap: 12px;
+}
+
+.analytics-insight {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.analytics-insight-icon {
+  display: grid;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  color: #aaa5ff;
+  background: rgba(129, 122, 255, 0.09);
+  font-weight: 800;
+}
+
+.analytics-insight span {
+  display: block;
+  color: rgba(245, 247, 255, 0.37);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.analytics-insight strong {
+  display: block;
+  margin-top: 3px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+}
+
+.analytics-insight p {
+  margin: 2px 0 0;
+  color: rgba(245, 247, 255, 0.4);
+  font-size: 10px;
+}
+
+/* =====================================================
+   GLOBAL
+   ===================================================== */
+
+.analytics-global-panel {
+  margin-bottom: 20px;
+}
+
+.analytics-global-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analytics-global-item {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.analytics-global-item span {
+  display: block;
+  margin-bottom: 10px;
+  color: rgba(245, 247, 255, 0.36);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+}
+
+.analytics-global-item strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 23px;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1000px) {
+  .analytics-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-global-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .analytics-issuer-card,
+  .analytics-connect-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .analytics-issuer-meta {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .analytics-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-global-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .analytics-issuer-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-global-grid {
+    grid-template-columns: 1fr;
+  }
+}
