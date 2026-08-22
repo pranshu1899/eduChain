@@ -87,18 +87,21 @@ function formatDate(date: string) {
     year: "numeric",
   });
 }
-
 function statusText(status: number) {
-  if (status === 0) {
-    return "ACTIVE";
-  }
-
   if (status === 1) {
-    return "REVOKED";
+    return "ACTIVE";
   }
 
   if (status === 2) {
     return "SUPERSEDED";
+  }
+
+  if (status === 3) {
+    return "REVOKED";
+  }
+
+  if (status === 0) {
+    return "NONE";
   }
 
   return "UNKNOWN";

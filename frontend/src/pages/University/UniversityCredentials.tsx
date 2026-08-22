@@ -59,18 +59,29 @@ function getEthereum(): LocalEthereumProvider | null {
   return ethereum ?? null;
 }
 
+/* =========================================================
+   STATUS HELPERS
+
+   Contract enum:
+   0 = NONE
+   1 = ACTIVE
+   2 = SUPERSEDED
+   3 = REVOKED
+   ========================================================= */
+
 function statusText(status: number) {
-  if (status === 0) return "ACTIVE";
-  if (status === 1) return "REVOKED";
+  if (status === 1) return "ACTIVE";
   if (status === 2) return "SUPERSEDED";
+  if (status === 3) return "REVOKED";
+  if (status === 0) return "NONE";
 
   return "UNKNOWN";
 }
 
 function statusClass(status: number) {
-  if (status === 0) return "active";
-  if (status === 1) return "revoked";
+  if (status === 1) return "active";
   if (status === 2) return "superseded";
+  if (status === 3) return "revoked";
 
   return "unknown";
 }
@@ -123,9 +134,7 @@ export default function UniversityCredentials() {
   const [walletAddress, setWalletAddress] = useState("");
   const [connected, setConnected] = useState(false);
 
-  const [credentials, setCredentials] = useState<
-    Credential[]
-  >([]);
+  const [credentials, setCredentials] = useState<Credential[]>([]);
 
   const [totalIssued, setTotalIssued] = useState(0);
   const [totalRevoked, setTotalRevoked] = useState(0);
@@ -144,9 +153,7 @@ export default function UniversityCredentials() {
   useEffect(() => {
     const ethereum = getEthereum();
 
-    if (!ethereum) {
-      return;
-    }
+    if (!ethereum) return;
 
     const loadWallet = async () => {
       try {
@@ -214,13 +221,6 @@ export default function UniversityCredentials() {
 
         const contract = getReadOnlyContract();
 
-        /*
-         * Your contract exposes totalCredentialsIssued()
-         * rather than a getAllCredentials() function.
-         *
-         * Therefore we read credential IDs from 1 to total.
-         */
-
         const [
           issued,
           revoked,
@@ -246,13 +246,6 @@ export default function UniversityCredentials() {
 
         const loaded: Credential[] = [];
 
-        /*
-         * Fetch credentials individually.
-         *
-         * This matches the ABI currently available in
-         * your eduProof service.
-         */
-
         for (
           let credentialId = 1;
           credentialId <= issuedCount;
@@ -268,21 +261,12 @@ export default function UniversityCredentials() {
               getCredentialFromResult(result),
             );
           } catch (credentialError) {
-            /*
-             * One invalid/missing record should not prevent
-             * the remaining credentials from appearing.
-             */
-
             console.error(
               `Failed to load credential #${credentialId}:`,
               credentialError,
             );
           }
         }
-
-        /*
-         * Newest credentials first.
-         */
 
         loaded.sort((a, b) => b.id - a.id);
 
@@ -309,7 +293,7 @@ export default function UniversityCredentials() {
   }, [loadCredentials]);
 
   /* =====================================================
-     FILTER
+     SEARCH
      ===================================================== */
 
   const filteredCredentials =
@@ -318,9 +302,7 @@ export default function UniversityCredentials() {
         .trim()
         .toLowerCase();
 
-      if (!query) {
-        return true;
-      }
+      if (!query) return true;
 
       return (
         credential.studentDID
@@ -339,6 +321,18 @@ export default function UniversityCredentials() {
       );
     });
 
+  const activeCount =
+    credentials.filter(
+      (credential) =>
+        credential.status === 1,
+    ).length;
+
+  const supersededCount =
+    credentials.filter(
+      (credential) =>
+        credential.status === 2,
+    ).length;
+
   /* =====================================================
      PAGE
      ===================================================== */
@@ -348,359 +342,489 @@ export default function UniversityCredentials() {
       walletAddress={walletAddress}
       connected={connected}
     >
-      {/* =================================================
-          PAGE HEADER
-          ================================================= */}
+      <div className="credentials-page">
 
-      <section className="university-page-header">
-        <div>
-          <span className="page-eyebrow">
-            CREDENTIAL MANAGEMENT
-          </span>
+        {/* =================================================
+            HEADER
+            ================================================= */}
 
-          <h1>
-            Credentials
-          </h1>
+        <section className="credentials-page-header">
 
-          <p>
-            View and manage academic credentials issued
-            by your institution.
-          </p>
-        </div>
+          <div className="credentials-heading">
 
-        <div className="university-page-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => loadCredentials(true)}
-            disabled={refreshing}
-          >
-            {refreshing
-              ? "Refreshing..."
-              : "↻ Refresh"}
-          </button>
+            <span className="credentials-eyebrow">
+              CREDENTIAL MANAGEMENT
+            </span>
 
-          <Link
-            to="/university/issue"
-            className="primary-button"
-          >
-            + Issue Credential
-          </Link>
-        </div>
-      </section>
+            <h1>
+              Credentials
+            </h1>
 
-      {/* =================================================
-          ERROR
-          ================================================= */}
+            <p>
+              View and manage academic credentials issued
+              by your institution.
+            </p>
 
-      {error && (
-        <div className="blockchain-error">
-          {error}
-        </div>
-      )}
-
-      {/* =================================================
-          STATISTICS
-          ================================================= */}
-
-      <section className="credentials-stat-grid">
-
-        <div className="credential-stat-card">
-          <div className="credential-stat-icon purple">
-            #
           </div>
 
-          <div>
-            <span>
-              TOTAL ISSUED
+          <div className="credentials-header-actions">
+
+            <button
+              type="button"
+              className="credentials-refresh-button"
+              onClick={() =>
+                loadCredentials(true)
+              }
+              disabled={refreshing}
+            >
+              <span>
+                ↻
+              </span>
+
+              {refreshing
+                ? "Refreshing..."
+                : "Refresh"}
+            </button>
+
+            <Link
+              to="/university/issue"
+              className="credentials-issue-button"
+            >
+              <span>
+                +
+              </span>
+
+              Issue Credential
+            </Link>
+
+          </div>
+
+        </section>
+
+        {/* =================================================
+            ERROR
+            ================================================= */}
+
+        {error && (
+          <div className="credentials-error">
+            <span className="credentials-error-icon">
+              !
             </span>
+
+            <div>
+              <strong>
+                Unable to load credentials
+              </strong>
+
+              <p>
+                {error}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* =================================================
+            STATS
+            ================================================= */}
+
+        <section className="credentials-stats">
+
+          <div className="credential-stat-card total">
+
+            <div className="credential-stat-top">
+              <div className="credential-stat-icon">
+                #
+              </div>
+
+              <span>
+                TOTAL ISSUED
+              </span>
+            </div>
 
             <strong>
               {totalIssued}
             </strong>
-          </div>
-        </div>
 
-        <div className="credential-stat-card">
-          <div className="credential-stat-icon green">
-            ✓
+            <small>
+              All credentials issued
+            </small>
+
           </div>
 
-          <div>
-            <span>
-              ACTIVE
-            </span>
+          <div className="credential-stat-card active">
+
+            <div className="credential-stat-top">
+              <div className="credential-stat-icon">
+                ✓
+              </div>
+
+              <span>
+                ACTIVE
+              </span>
+            </div>
 
             <strong>
-              {Math.max(
-                totalIssued - totalRevoked,
-                0,
-              )}
+              {activeCount}
             </strong>
-          </div>
-        </div>
 
-        <div className="credential-stat-card">
-          <div className="credential-stat-icon blue">
-            ↻
+            <small>
+              Currently valid
+            </small>
+
           </div>
 
-          <div>
-            <span>
-              UPDATED
-            </span>
+          <div className="credential-stat-card updated">
+
+            <div className="credential-stat-top">
+              <div className="credential-stat-icon">
+                ↻
+              </div>
+
+              <span>
+                SUPERSEDED
+              </span>
+            </div>
 
             <strong>
-              {totalUpdated}
+              {supersededCount}
             </strong>
-          </div>
-        </div>
 
-        <div className="credential-stat-card">
-          <div className="credential-stat-icon red">
-            ×
+            <small>
+              Replaced by newer versions
+            </small>
+
           </div>
 
-          <div>
-            <span>
-              REVOKED
-            </span>
+          <div className="credential-stat-card revoked">
+
+            <div className="credential-stat-top">
+              <div className="credential-stat-icon">
+                ×
+              </div>
+
+              <span>
+                REVOKED
+              </span>
+            </div>
 
             <strong>
               {totalRevoked}
             </strong>
-          </div>
-        </div>
 
-      </section>
+            <small>
+              Revoked on-chain
+            </small>
 
-      {/* =================================================
-          CREDENTIAL LIST
-          ================================================= */}
-
-      <section className="university-panel credentials-list-panel">
-
-        <div className="university-panel-header credentials-toolbar">
-
-          <div>
-            <h2>
-              Issued Credentials
-            </h2>
-
-            <p>
-              Blockchain records retrieved from Sepolia.
-            </p>
           </div>
 
-          <div className="credentials-search">
-            <span>
-              ⌕
-            </span>
+        </section>
 
-            <input
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-              placeholder="Search credentials..."
-            />
-          </div>
+        {/* =================================================
+            CREDENTIALS PANEL
+            ================================================= */}
 
-        </div>
+        <section className="credentials-panel">
 
-        {/* LOADING */}
+          <div className="credentials-panel-header">
 
-        {loading && (
-          <div className="credentials-loading">
-            <div className="credential-loading-spinner" />
+            <div>
+              <span className="credentials-panel-eyebrow">
+                BLOCKCHAIN RECORDS
+              </span>
 
-            <h3>
-              Loading credentials...
-            </h3>
-
-            <p>
-              Reading credential records from
-              EduProof on Sepolia.
-            </p>
-          </div>
-        )}
-
-        {/* EMPTY */}
-
-        {!loading &&
-          credentials.length === 0 && (
-            <div className="university-empty-state">
-              <div className="empty-state-icon">
-                ▣
-              </div>
-
-              <h3>
-                No credentials issued yet
-              </h3>
+              <h2>
+                Issued Credentials
+              </h2>
 
               <p>
-                Credentials issued by your institution
-                will appear here.
+                Credential records retrieved directly
+                from the EduProof contract on Sepolia.
               </p>
-
-              <Link
-                to="/university/issue"
-                className="primary-button"
-              >
-                Issue First Credential
-              </Link>
             </div>
-          )}
 
-        {/* NO SEARCH RESULTS */}
+            <div className="credentials-search-box">
 
-        {!loading &&
-          credentials.length > 0 &&
-          filteredCredentials.length === 0 && (
-            <div className="credentials-no-results">
-              <div className="empty-state-icon">
+              <span>
                 ⌕
-              </div>
+              </span>
+
+              <input
+                type="text"
+                value={search}
+                onChange={(event) =>
+                  setSearch(
+                    event.target.value,
+                  )
+                }
+                placeholder="Search credentials..."
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSearch("")
+                  }
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+
+            </div>
+
+          </div>
+
+          {/* =================================================
+              LOADING
+              ================================================= */}
+
+          {loading && (
+            <div className="credentials-loading">
+
+              <div className="credentials-spinner" />
 
               <h3>
-                No matching credentials
+                Loading credentials
               </h3>
 
               <p>
-                Try searching by student DID, degree,
-                credential type or credential ID.
+                Reading blockchain records from Sepolia...
               </p>
+
             </div>
           )}
 
-        {/* CREDENTIAL CARDS */}
+          {/* =================================================
+              EMPTY
+              ================================================= */}
 
-        {!loading &&
-          filteredCredentials.length > 0 && (
-            <div className="credentials-card-list">
+          {!loading &&
+            credentials.length === 0 && (
+              <div className="credentials-empty">
 
-              {filteredCredentials.map(
-                (credential) => (
-                  <article
-                    key={credential.id}
-                    className="credential-list-card"
-                  >
+                <div className="credentials-empty-icon">
+                  🎓
+                </div>
 
-                    <div className="credential-list-main">
+                <h3>
+                  No credentials issued yet
+                </h3>
 
-                      <div className="credential-list-icon">
-                        🎓
-                      </div>
+                <p>
+                  Credentials issued by your institution
+                  will appear here.
+                </p>
 
-                      <div className="credential-list-info">
+                <Link
+                  to="/university/issue"
+                  className="credentials-issue-button"
+                >
+                  + Issue First Credential
+                </Link>
 
-                        <div className="credential-list-title-row">
+              </div>
+            )}
+
+          {/* =================================================
+              NO SEARCH RESULTS
+              ================================================= */}
+
+          {!loading &&
+            credentials.length > 0 &&
+            filteredCredentials.length === 0 && (
+              <div className="credentials-empty">
+
+                <div className="credentials-empty-icon">
+                  ⌕
+                </div>
+
+                <h3>
+                  No matching credentials
+                </h3>
+
+                <p>
+                  Try searching by credential ID,
+                  student DID, degree or institution.
+                </p>
+
+                <button
+                  type="button"
+                  className="credentials-clear-button"
+                  onClick={() =>
+                    setSearch("")
+                  }
+                >
+                  Clear Search
+                </button>
+
+              </div>
+            )}
+
+          {/* =================================================
+              CREDENTIAL LIST
+              ================================================= */}
+
+          {!loading &&
+            filteredCredentials.length > 0 && (
+              <div className="credentials-list">
+
+                {filteredCredentials.map(
+                  (credential) => (
+                    <article
+                      key={credential.id}
+                      className="credential-card"
+                    >
+
+                      {/* TOP */}
+
+                      <div className="credential-card-top">
+
+                        <div className="credential-card-identity">
+
+                          <div className="credential-card-icon">
+                            🎓
+                          </div>
 
                           <div>
-                            <span className="credential-list-type">
+
+                            <span className="credential-card-type">
                               {credential.credentialType}
                             </span>
 
                             <h3>
                               {credential.degree}
                             </h3>
+
+                            <p>
+                              {credential.institution}
+                            </p>
+
                           </div>
 
-                          <span
-                            className={`credential-status ${statusClass(
-                              credential.status,
-                            )}`}
-                          >
-                            <span className="credential-status-dot" />
+                        </div>
 
-                            {statusText(
-                              credential.status,
-                            )}
+                        <span
+                          className={`credential-status-badge ${statusClass(
+                            credential.status,
+                          )}`}
+                        >
+                          <span />
+
+                          {statusText(
+                            credential.status,
+                          )}
+                        </span>
+
+                      </div>
+
+                      {/* DIVIDER */}
+
+                      <div className="credential-card-divider" />
+
+                      {/* DETAILS */}
+
+                      <div className="credential-card-details">
+
+                        <div className="credential-detail">
+
+                          <span>
+                            CREDENTIAL ID
                           </span>
 
+                          <strong>
+                            #{credential.id}
+                          </strong>
+
                         </div>
 
-                        <div className="credential-list-meta">
+                        <div className="credential-detail">
 
-                          <div>
-                            <span>
-                              CREDENTIAL
-                            </span>
+                          <span>
+                            STUDENT DID
+                          </span>
 
-                            <strong>
-                              #{credential.id}
-                            </strong>
-                          </div>
+                          <strong
+                            title={
+                              credential.studentDID
+                            }
+                          >
+                            {shortDID(
+                              credential.studentDID,
+                            )}
+                          </strong>
 
-                          <div>
-                            <span>
-                              STUDENT DID
-                            </span>
+                        </div>
 
-                            <strong>
-                              {shortDID(
-                                credential.studentDID,
-                              )}
-                            </strong>
-                          </div>
+                        <div className="credential-detail">
 
-                          <div>
-                            <span>
-                              ISSUE DATE
-                            </span>
+                          <span>
+                            ISSUE DATE
+                          </span>
 
-                            <strong>
-                              {formatDate(
-                                credential.issueDate,
-                              )}
-                            </strong>
-                          </div>
+                          <strong>
+                            {formatDate(
+                              credential.issueDate,
+                            )}
+                          </strong>
 
-                          <div>
-                            <span>
-                              VERSION
-                            </span>
+                        </div>
 
-                            <strong>
-                              v{credential.version}
-                            </strong>
-                          </div>
+                        <div className="credential-detail">
+
+                          <span>
+                            VERSION
+                          </span>
+
+                          <strong>
+                            v{credential.version}
+                          </strong>
 
                         </div>
 
                       </div>
 
-                    </div>
+                      {/* BOTTOM */}
 
-                    <div className="credential-list-actions">
+                      <div className="credential-card-bottom">
 
-                      <div className="credential-chain-indicator">
-                        <span className="chain-dot" />
+                        <div className="credential-onchain">
 
-                        On-chain
+                          <span className="onchain-dot" />
+
+                          <span>
+                            Blockchain secured
+                          </span>
+
+                          <small>
+                            Sepolia
+                          </small>
+
+                        </div>
+
+                        <Link
+                          to={`/university/credentials/${credential.id}`}
+                          className="credential-details-button"
+                        >
+                          View Details
+
+                          <span>
+                            →
+                          </span>
+                        </Link>
+
                       </div>
 
-                      <Link
-                        to={`/university/credentials/${credential.id}`}
-                        className="credential-view-button"
-                      >
-                        View Details
-                        <span>
-                          →
-                        </span>
-                      </Link>
+                    </article>
+                  ),
+                )}
 
-                    </div>
+              </div>
+            )}
 
-                  </article>
-                ),
-              )}
+        </section>
 
-            </div>
-          )}
-
-      </section>
+      </div>
     </UniversityLayout>
   );
 }

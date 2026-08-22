@@ -26,36 +26,54 @@ interface Credential {
   previousVersionId: number;
 }
 
+/*
+ * =========================================================
+ * CONTRACT STATUS MAPPING
+ * =========================================================
+ *
+ * Solidity enum:
+ *
+ * 0 = NONE
+ * 1 = ACTIVE
+ * 2 = SUPERSEDED
+ * 3 = REVOKED
+ *
+ * Keep this mapping identical everywhere in the frontend.
+ */
+
 function statusText(status: number) {
-  if (status === 0) {
-    return "VERIFIED";
-  }
+  switch (status) {
+    case 0:
+      return "NONE";
 
-  if (status === 1) {
-    return "REVOKED";
-  }
+    case 1:
+      return "ACTIVE";
 
-  if (status === 2) {
-    return "SUPERSEDED";
-  }
+    case 2:
+      return "SUPERSEDED";
 
-  return "UNKNOWN";
+    case 3:
+      return "REVOKED";
+
+    default:
+      return "UNKNOWN";
+  }
 }
 
 function statusClass(status: number) {
-  if (status === 0) {
-    return "verified";
-  }
+  switch (status) {
+    case 1:
+      return "verified";
 
-  if (status === 1) {
-    return "revoked";
-  }
+    case 2:
+      return "superseded";
 
-  if (status === 2) {
-    return "superseded";
-  }
+    case 3:
+      return "revoked";
 
-  return "unknown";
+    default:
+      return "unknown";
+  }
 }
 
 function formatDate(date: string) {
@@ -136,6 +154,12 @@ export default function VerifierPage() {
     setHasSearched,
   ] = useState(false);
 
+  /*
+   * =========================================================
+   * VERIFY CREDENTIAL
+   * =========================================================
+   */
+
   const verifyCredential =
     async (
       event: FormEvent<HTMLFormElement>,
@@ -147,10 +171,9 @@ export default function VerifierPage() {
       setSignatureValid(null);
       setHasSearched(true);
 
-      const id =
-        Number(
-          credentialId.trim(),
-        );
+      const id = Number(
+        credentialId.trim(),
+      );
 
       if (
         !Number.isInteger(id) ||
@@ -168,6 +191,11 @@ export default function VerifierPage() {
 
         const contract =
           getReadOnlyContract();
+
+        /*
+         * Read credential directly
+         * from the Sepolia contract.
+         */
 
         const result =
           await contract.getCredential(
@@ -260,6 +288,10 @@ export default function VerifierPage() {
           loadedCredential,
         );
 
+        /*
+         * Verify issuer signature independently.
+         */
+
         const valid =
           await contract.verifyCredentialSignature(
             id,
@@ -283,6 +315,12 @@ export default function VerifierPage() {
       }
     };
 
+  /*
+   * =========================================================
+   * RESET
+   * =========================================================
+   */
+
   const resetVerification =
     () => {
       setCredentialId("");
@@ -292,10 +330,32 @@ export default function VerifierPage() {
       setHasSearched(false);
     };
 
+  /*
+   * =========================================================
+   * IMPORTANT STATUS LOGIC
+   * =========================================================
+   *
+   * ACTIVE = 1
+   * SUPERSEDED = 2
+   * REVOKED = 3
+   */
+
+  const isActive =
+    credential !== null &&
+    credential.status === 1;
+
+  const isSuperseded =
+    credential !== null &&
+    credential.status === 2;
+
+  const isRevoked =
+    credential !== null &&
+    credential.status === 3;
+
   const isActuallyValid =
     credential !== null &&
     signatureValid === true &&
-    credential.status === 0;
+    isActive;
 
   return (
     <div className="verifier-page">
@@ -493,7 +553,9 @@ export default function VerifierPage() {
 
           <section className="verifier-result">
 
-            {/* RESULT HEADER */}
+            {/* =================================================
+                RESULT HEADER
+                ================================================= */}
 
             <div
               className={`verifier-result-banner ${statusClass(
@@ -505,9 +567,9 @@ export default function VerifierPage() {
 
                 {isActuallyValid
                   ? "✓"
-                  : credential.status === 1
+                  : isRevoked
                     ? "×"
-                    : credential.status === 2
+                    : isSuperseded
                       ? "↻"
                       : "!"}
 
@@ -520,22 +582,24 @@ export default function VerifierPage() {
                 </span>
 
                 <h2>
+
                   {isActuallyValid
                     ? "Credential Verified"
-                    : credential.status === 1
+                    : isRevoked
                       ? "Credential Revoked"
-                      : credential.status === 2
+                      : isSuperseded
                         ? "Credential Superseded"
                         : "Credential Status Unknown"}
+
                 </h2>
 
                 <p>
 
                   {isActuallyValid
                     ? "This credential has a valid issuer signature and is currently active on-chain."
-                    : credential.status === 1
+                    : isRevoked
                       ? "This credential has a valid issuer signature but has been revoked on-chain."
-                      : credential.status === 2
+                      : isSuperseded
                         ? "This credential has been replaced by a newer version."
                         : "The credential was found, but its current status could not be determined."}
 
@@ -544,14 +608,18 @@ export default function VerifierPage() {
               </div>
 
               <div className="verifier-result-status">
+
                 {statusText(
                   credential.status,
                 )}
+
               </div>
 
             </div>
 
-            {/* CREDENTIAL INFORMATION */}
+            {/* =================================================
+                CREDENTIAL INFORMATION
+                ================================================= */}
 
             <div className="verifier-section">
 
@@ -580,10 +648,7 @@ export default function VerifierPage() {
                   </span>
 
                   <strong>
-                    #
-                    {
-                      credential.id
-                    }
+                    #{credential.id}
                   </strong>
 
                 </div>
@@ -623,10 +688,7 @@ export default function VerifierPage() {
                   </span>
 
                   <strong>
-                    v
-                    {
-                      credential.version
-                    }
+                    v{credential.version}
                   </strong>
 
                 </div>
@@ -667,7 +729,9 @@ export default function VerifierPage() {
 
             </div>
 
-            {/* SIGNATURE VERIFICATION */}
+            {/* =================================================
+                CRYPTOGRAPHIC PROOF
+                ================================================= */}
 
             <div className="verifier-section">
 
@@ -692,28 +756,34 @@ export default function VerifierPage() {
 
                 <div
                   className={
-                    signatureValid
+                    signatureValid === true
                       ? "verifier-proof-icon valid"
                       : "verifier-proof-icon invalid"
                   }
                 >
-                  {signatureValid
+
+                  {signatureValid === true
                     ? "✓"
                     : "×"}
+
                 </div>
 
                 <div>
 
                   <strong>
-                    {signatureValid
+
+                    {signatureValid === true
                       ? "Signature Valid"
                       : "Signature Invalid"}
+
                   </strong>
 
                   <span>
-                    {signatureValid
+
+                    {signatureValid === true
                       ? "The credential was signed by the registered issuer."
                       : "The issuer signature could not be verified."}
+
                   </span>
 
                 </div>
@@ -786,7 +856,9 @@ export default function VerifierPage() {
 
             </div>
 
-            {/* IPFS */}
+            {/* =================================================
+                IPFS
+                ================================================= */}
 
             <div className="verifier-section">
 
@@ -839,7 +911,9 @@ export default function VerifierPage() {
 
             </div>
 
-            {/* AGAIN */}
+            {/* =================================================
+                VERIFY ANOTHER
+                ================================================= */}
 
             <div className="verifier-result-actions">
 
