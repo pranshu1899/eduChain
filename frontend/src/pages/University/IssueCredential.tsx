@@ -1,157 +1,689 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
+
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
+
 import UniversityLayout from "../../components/university/UniversityLayout";
 
+import {
+  getIssuer,
+  isAuthorizedIssuer,
+  issueCredential,
+} from "../../config/contractService";
+
+/* =====================================================
+   TYPES
+   ===================================================== */
+
+interface EthereumProvider {
+  request(args: {
+    method: string;
+    params?: unknown[];
+  }): Promise<unknown>;
+
+  on?: (
+    event: string,
+    handler: (...args: unknown[]) => void
+  ) => void;
+
+  removeListener?: (
+    event: string,
+    handler: (...args: unknown[]) => void
+  ) => void;
+}
+
+function getEthereum(): EthereumProvider | null {
+  const ethereum = (
+    window as Window & {
+      ethereum?: EthereumProvider;
+    }
+  ).ethereum;
+
+  return ethereum ?? null;
+}
+
+function shortenAddress(
+  address: string
+): string {
+  if (!address) {
+    return "";
+  }
+
+  if (address.length <= 18) {
+    return address;
+  }
+
+  return `${address.slice(
+    0,
+    8
+  )}...${address.slice(-6)}`;
+}
+
+/* =====================================================
+   COMPONENT
+   ===================================================== */
+
 export default function IssueCredential() {
-  const [studentDID, setStudentDID] = useState("");
-  const [credentialType, setCredentialType] = useState("B.Tech");
+  const navigate = useNavigate();
+
+  /* ===================================================
+     FORM
+     =================================================== */
+
+  const [studentDID, setStudentDID] =
+    useState("");
+
+  const [credentialType, setCredentialType] =
+    useState("B.Tech");
+
   const [institution, setInstitution] =
-    useState("ABC University");
+    useState("");
+
   const [institutionId, setInstitutionId] =
-    useState("ABC-001");
+    useState("");
+
   const [degree, setDegree] =
     useState("Bachelor of Technology");
-  const [issueDate, setIssueDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
-  /*
-   * These values will be supplied by the connected
-   * university wallet/backend integration.
-   *
-   * Keeping them here prevents the UI from inventing
-   * blockchain state.
-   */
-  const walletAddress = "Not connected";
-  const connected = false;
+  const [issueDate, setIssueDate] =
+    useState("");
+
+  /* ===================================================
+     WALLET
+     =================================================== */
+
+  const [walletAddress, setWalletAddress] =
+    useState("");
+
+  const [connected, setConnected] =
+    useState(false);
+
+  const [walletLoading, setWalletLoading] =
+    useState(true);
+
+  /* ===================================================
+     ISSUER
+     =================================================== */
+
+  const [issuerLoading, setIssuerLoading] =
+    useState(false);
+
+  const [issuerAuthorized, setIssuerAuthorized] =
+    useState(false);
+
+  /* ===================================================
+     TRANSACTION
+     =================================================== */
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [transactionHash, setTransactionHash] =
+    useState("");
+
+  const [credentialId, setCredentialId] =
+    useState<number | null>(null);
+
+  /* ===================================================
+     LOAD WALLET + ISSUER
+     =================================================== */
+
+  useEffect(() => {
+    const ethereum = getEthereum();
+
+    if (!ethereum) {
+      setWalletLoading(false);
+      setError(
+        "MetaMask is not installed."
+      );
+      return;
+    }
+
+    const loadWallet = async () => {
+      try {
+        const accounts =
+          (await ethereum.request({
+            method: "eth_accounts",
+          })) as string[];
+
+        if (!accounts.length) {
+          setWalletAddress("");
+          setConnected(false);
+          setIssuerAuthorized(false);
+          return;
+        }
+
+        const address =
+          accounts[0];
+
+        setWalletAddress(address);
+        setConnected(true);
+
+        await loadIssuer(address);
+      } catch (walletError) {
+        console.error(
+          "Wallet loading failed:",
+          walletError
+        );
+
+        setError(
+          "Unable to read the connected MetaMask wallet."
+        );
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
+    const handleAccountsChanged = (
+      accounts: unknown
+    ) => {
+      const nextAccounts =
+        accounts as string[];
+
+      if (!nextAccounts.length) {
+        setWalletAddress("");
+        setConnected(false);
+        setIssuerAuthorized(false);
+        setInstitution("");
+        setInstitutionId("");
+        return;
+      }
+
+      const address =
+        nextAccounts[0];
+
+      setWalletAddress(address);
+      setConnected(true);
+
+      void loadIssuer(address);
+    };
+
+    const loadIssuer = async (
+      address: string
+    ) => {
+      try {
+        setIssuerLoading(true);
+        setError("");
+
+        const authorized =
+          await isAuthorizedIssuer(
+            address
+          );
+
+        setIssuerAuthorized(
+          Boolean(authorized)
+        );
+
+        if (!authorized) {
+          setInstitution("");
+          setInstitutionId("");
+
+          setError(
+            "Connected wallet is not an authorized university issuer."
+          );
+
+          return;
+        }
+
+        const issuer =
+          await getIssuer(address);
+
+        setInstitution(
+          issuer.institutionName
+        );
+
+        setInstitutionId(
+          issuer.institutionId
+        );
+      } catch (issuerError) {
+        console.error(
+          "Issuer loading failed:",
+          issuerError
+        );
+
+        setIssuerAuthorized(false);
+
+        setError(
+          "Unable to load university issuer information. Make sure MetaMask is connected to Ethereum Sepolia."
+        );
+      } finally {
+        setIssuerLoading(false);
+      }
+    };
+
+    /*
+     * Attach account-change listener.
+     */
+    ethereum.on?.(
+      "accountsChanged",
+      handleAccountsChanged
+    );
+
+    void loadWallet();
+
+    return () => {
+      ethereum.removeListener?.(
+        "accountsChanged",
+        handleAccountsChanged
+      );
+    };
+  }, []);
+
+  /* ===================================================
+     CONNECT WALLET
+     =================================================== */
+
+  const connectWallet = async () => {
+    const ethereum =
+      getEthereum();
+
+    if (!ethereum) {
+      setError(
+        "MetaMask is not installed."
+      );
+      return;
+    }
+
+    try {
+      setWalletLoading(true);
+      setError("");
+
+      const accounts =
+        (await ethereum.request({
+          method:
+            "eth_requestAccounts",
+        })) as string[];
+
+      if (!accounts.length) {
+        throw new Error(
+          "No MetaMask account was selected."
+        );
+      }
+
+      const address =
+        accounts[0];
+
+      setWalletAddress(address);
+      setConnected(true);
+
+      /*
+       * issuer check happens below
+       * through the existing service.
+       */
+      const authorized =
+        await isAuthorizedIssuer(
+          address
+        );
+
+      setIssuerAuthorized(
+        Boolean(authorized)
+      );
+
+      if (!authorized) {
+        setError(
+          "This wallet is not registered as an authorized EduProof university issuer."
+        );
+
+        return;
+      }
+
+      const issuer =
+        await getIssuer(address);
+
+      setInstitution(
+        issuer.institutionName
+      );
+
+      setInstitutionId(
+        issuer.institutionId
+      );
+    } catch (connectError) {
+      console.error(
+        "Wallet connection failed:",
+        connectError
+      );
+
+      setError(
+        connectError instanceof Error
+          ? connectError.message
+          : "Wallet connection failed."
+      );
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  /* ===================================================
+     ISSUE CREDENTIAL
+     =================================================== */
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     setError("");
     setMessage("");
+    setTransactionHash("");
+    setCredentialId(null);
+
+    /* -----------------------------------------------
+       VALIDATION
+       ----------------------------------------------- */
 
     if (!studentDID.trim()) {
-      setError("Please enter the student's DID.");
+      setError(
+        "Please enter the student's DID."
+      );
       return;
     }
 
     if (!degree.trim()) {
-      setError("Please enter the degree.");
+      setError(
+        "Please enter the degree."
+      );
       return;
     }
 
     if (!issueDate) {
-      setError("Please select the issue date.");
+      setError(
+        "Please select the issue date."
+      );
       return;
     }
 
-    setLoading(true);
+    if (!connected) {
+      setError(
+        "Connect the university wallet before issuing a credential."
+      );
+      return;
+    }
+
+    if (!issuerAuthorized) {
+      setError(
+        "The connected wallet is not an authorized university issuer."
+      );
+      return;
+    }
+
+    if (!institution || !institutionId) {
+      setError(
+        "University issuer information could not be loaded."
+      );
+      return;
+    }
+
+    /* -----------------------------------------------
+       ISSUE
+       ----------------------------------------------- */
 
     try {
+      setLoading(true);
+
+      setMessage(
+        "Preparing credential..."
+      );
+
       /*
-       * IMPORTANT:
+       * This single service call performs the complete
+       * issuance pipeline:
        *
-       * This is the integration point for the existing
-       * EduProof backend / smart-contract issuance flow.
-       *
-       * The backend flow you already built is:
-       *
-       * 1. Create credential metadata
-       * 2. createCredentialHash()
-       * 3. University signs the hash
-       * 4. Create Verifiable Credential
-       * 5. Upload VC metadata to IPFS
-       * 6. Call EduProof.issueCredential()
-       *
-       * Do not put the Pinata JWT in this frontend.
-       *
-       * We are intentionally not fabricating an API endpoint
-       * here because your actual backend endpoint has not
-       * been provided in this conversation.
+       * 1. Validate issuer
+       * 2. Get registered institution
+       * 3. Create credential hash
+       * 4. University signs hash
+       * 5. Create Verifiable Credential
+       * 6. Upload VC to IPFS
+       * 7. Send EduProof.issueCredential()
+       * 8. Wait for Sepolia confirmation
+       * 9. Extract credential ID
        */
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 600),
+      const result =
+        await issueCredential(
+          studentDID.trim(),
+          credentialType,
+          degree.trim(),
+          issueDate
+        );
+
+      setCredentialId(
+        result.credentialId
+      );
+
+      setTransactionHash(
+        result.transactionHash
       );
 
       setMessage(
-        "Credential data validated. Blockchain issuance integration is ready to be connected.",
+        "Credential issued successfully on Ethereum Sepolia."
       );
-    } catch (err) {
-      console.error(err);
+    } catch (issueError) {
+      console.error(
+        "Credential issuance failed:",
+        issueError
+      );
+
+      let readableMessage =
+        "Credential issuance failed.";
+
+      if (
+        issueError instanceof Error
+      ) {
+        readableMessage =
+          issueError.message;
+      }
+
+      /*
+       * MetaMask commonly throws this
+       * when the user rejects signing.
+       */
+      if (
+        readableMessage
+          .toLowerCase()
+          .includes("user rejected")
+      ) {
+        readableMessage =
+          "Transaction was rejected in MetaMask.";
+      }
 
       setError(
-        "Credential issuance failed. Please check the wallet and backend connection.",
+        readableMessage
       );
     } finally {
       setLoading(false);
     }
   };
 
+  /* ===================================================
+     OPEN CREATED CREDENTIAL
+     =================================================== */
+
+  const openCredential = () => {
+    if (credentialId === null) {
+      return;
+    }
+
+    navigate(
+      `/university/credentials/${credentialId}`
+    );
+  };
+
+  /* ===================================================
+     RENDER
+     =================================================== */
+
   return (
     <UniversityLayout
       walletAddress={walletAddress}
       connected={connected}
     >
-      <section className="university-page-header">
-        <div>
-          <span className="page-eyebrow">
-            CREDENTIAL MANAGEMENT
-          </span>
+      <div className="issue-credential-page">
 
-          <h1>Issue Credential</h1>
+        {/* =========================================
+            PAGE HEADER
+        ========================================== */}
 
-          <p>
-            Create a verifiable academic credential secured
-            by the EduProof blockchain network.
-          </p>
-        </div>
+        <section className="issue-page-header">
 
-        <div className="university-page-actions">
-          <Link
-            to="/university"
-            className="secondary-button"
-          >
-            ← Dashboard
-          </Link>
+          <div>
 
-          <Link
-            to="/university/credentials"
-            className="secondary-button"
-          >
-            View Credentials
-          </Link>
-        </div>
-      </section>
-
-      <section className="university-dashboard-grid issue-page-grid">
-        {/* ==========================================
-            FORM
-           ========================================== */}
-
-        <div className="university-panel">
-          <div className="university-panel-header">
-            <div>
-              <h2>Credential Information</h2>
-
-              <p>
-                Enter the academic details that will become
-                part of the credential.
-              </p>
+            <div className="issue-eyebrow">
+              UNIVERSITY PORTAL
             </div>
+
+            <h1>
+              Issue Credential
+            </h1>
+
+            <p>
+              Create a verifiable academic credential
+              secured by the EduProof blockchain network.
+            </p>
+
           </div>
 
-          <form
-            className="credential-form"
-            onSubmit={handleSubmit}
-          >
-            <div className="form-grid">
-              <div className="form-field form-field-full">
-                <label htmlFor="studentDID">
+          <div className="issue-header-actions">
+
+            <Link
+              to="/university"
+              className="issue-secondary-button"
+            >
+              ← Dashboard
+            </Link>
+
+            <Link
+              to="/university/credentials"
+              className="issue-secondary-button"
+            >
+              View Credentials
+            </Link>
+
+          </div>
+
+        </section>
+
+        {/* =========================================
+            WALLET STATUS
+        ========================================== */}
+
+        <section className="issue-wallet-banner">
+
+          <div className="issue-wallet-left">
+
+            <div
+              className={
+                connected
+                  ? "issue-wallet-dot connected"
+                  : "issue-wallet-dot"
+              }
+            />
+
+            <div>
+
+              <span>
+                UNIVERSITY ISSUER
+              </span>
+
+              <strong>
+                {walletLoading
+                  ? "Checking wallet..."
+                  : connected
+                    ? shortenAddress(
+                        walletAddress
+                      )
+                    : "Wallet not connected"}
+              </strong>
+
+            </div>
+
+          </div>
+
+          {!connected && (
+            <button
+              type="button"
+              className="issue-connect-button"
+              onClick={
+                connectWallet
+              }
+              disabled={
+                walletLoading
+              }
+            >
+              {walletLoading
+                ? "Connecting..."
+                : "Connect Wallet"}
+            </button>
+          )}
+
+          {connected &&
+            issuerAuthorized && (
+              <div className="issue-authorized-badge">
+                ✓ Authorized Issuer
+              </div>
+            )}
+
+        </section>
+
+        {/* =========================================
+            MAIN GRID
+        ========================================== */}
+
+        <section className="issue-main-grid">
+
+          {/* =======================================
+              LEFT FORM
+          ======================================== */}
+
+          <div className="issue-card">
+
+            <div className="issue-card-header">
+
+              <div className="issue-card-icon">
+                +
+              </div>
+
+              <div>
+
+                <h2>
+                  Credential Information
+                </h2>
+
+                <p>
+                  Enter the academic details that will
+                  become part of the credential.
+                </p>
+
+              </div>
+
+            </div>
+
+            <form
+              className="issue-form"
+              onSubmit={
+                handleSubmit
+              }
+            >
+
+              {/* Student DID */}
+
+              <div className="issue-form-group full">
+
+                <label
+                  htmlFor="studentDID"
+                >
                   Student DID
                 </label>
 
@@ -160,106 +692,173 @@ export default function IssueCredential() {
                   type="text"
                   value={studentDID}
                   onChange={(event) =>
-                    setStudentDID(event.target.value)
+                    setStudentDID(
+                      event.target.value
+                    )
                   }
                   placeholder="did:eduproof:..."
                   required
+                  disabled={
+                    loading
+                  }
                 />
 
-                <span className="form-help">
-                  Decentralized identifier of the student.
+                <span>
+                  Decentralized identifier of the
+                  student.
                 </span>
+
               </div>
 
-              <div className="form-field">
-                <label htmlFor="credentialType">
-                  Credential Type
-                </label>
+              {/* Credential Type + Degree */}
 
-                <select
-                  id="credentialType"
-                  value={credentialType}
-                  onChange={(event) =>
-                    setCredentialType(event.target.value)
-                  }
+              <div className="issue-form-row">
+
+                <div className="issue-form-group">
+
+                  <label
+                    htmlFor="credentialType"
+                  >
+                    Credential Type
+                  </label>
+
+                  <select
+                    id="credentialType"
+                    value={
+                      credentialType
+                    }
+                    onChange={(event) =>
+                      setCredentialType(
+                        event.target.value
+                      )
+                    }
+                    disabled={
+                      loading
+                    }
+                  >
+
+                    <option value="B.Tech">
+                      B.Tech
+                    </option>
+
+                    <option value="B.E.">
+                      B.E.
+                    </option>
+
+                    <option value="B.Sc.">
+                      B.Sc.
+                    </option>
+
+                    <option value="M.Tech">
+                      M.Tech
+                    </option>
+
+                    <option value="M.Sc.">
+                      M.Sc.
+                    </option>
+
+                    <option value="MBA">
+                      MBA
+                    </option>
+
+                  </select>
+
+                </div>
+
+                <div className="issue-form-group">
+
+                  <label
+                    htmlFor="degree"
+                  >
+                    Degree
+                  </label>
+
+                  <input
+                    id="degree"
+                    type="text"
+                    value={degree}
+                    onChange={(event) =>
+                      setDegree(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Bachelor of Technology"
+                    required
+                    disabled={
+                      loading
+                    }
+                  />
+
+                </div>
+
+              </div>
+
+              {/* Institution */}
+
+              <div className="issue-form-row">
+
+                <div className="issue-form-group">
+
+                  <label
+                    htmlFor="institution"
+                  >
+                    Institution
+                  </label>
+
+                  <input
+                    id="institution"
+                    type="text"
+                    value={
+                      issuerLoading
+                        ? "Loading issuer..."
+                        : institution
+                    }
+                    readOnly
+                    disabled
+                  />
+
+                  <span>
+                    Loaded from the registered
+                    university issuer.
+                  </span>
+
+                </div>
+
+                <div className="issue-form-group">
+
+                  <label
+                    htmlFor="institutionId"
+                  >
+                    Institution ID
+                  </label>
+
+                  <input
+                    id="institutionId"
+                    type="text"
+                    value={
+                      issuerLoading
+                        ? "Loading..."
+                        : institutionId
+                    }
+                    readOnly
+                    disabled
+                  />
+
+                  <span>
+                    Registered on the EduProof contract.
+                  </span>
+
+                </div>
+
+              </div>
+
+              {/* Issue Date */}
+
+              <div className="issue-form-group">
+
+                <label
+                  htmlFor="issueDate"
                 >
-                  <option value="B.Tech">
-                    B.Tech
-                  </option>
-
-                  <option value="B.E.">
-                    B.E.
-                  </option>
-
-                  <option value="B.Sc.">
-                    B.Sc.
-                  </option>
-
-                  <option value="M.Tech">
-                    M.Tech
-                  </option>
-
-                  <option value="M.Sc.">
-                    M.Sc.
-                  </option>
-
-                  <option value="MBA">
-                    MBA
-                  </option>
-                </select>
-              </div>
-
-              <div className="form-field">
-                <label htmlFor="degree">
-                  Degree
-                </label>
-
-                <input
-                  id="degree"
-                  type="text"
-                  value={degree}
-                  onChange={(event) =>
-                    setDegree(event.target.value)
-                  }
-                  placeholder="Bachelor of Technology"
-                  required
-                />
-              </div>
-
-              <div className="form-field">
-                <label htmlFor="institution">
-                  Institution
-                </label>
-
-                <input
-                  id="institution"
-                  type="text"
-                  value={institution}
-                  onChange={(event) =>
-                    setInstitution(event.target.value)
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-field">
-                <label htmlFor="institutionId">
-                  Institution ID
-                </label>
-
-                <input
-                  id="institutionId"
-                  type="text"
-                  value={institutionId}
-                  onChange={(event) =>
-                    setInstitutionId(event.target.value)
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-field">
-                <label htmlFor="issueDate">
                   Issue Date
                 </label>
 
@@ -268,184 +867,405 @@ export default function IssueCredential() {
                   type="date"
                   value={issueDate}
                   onChange={(event) =>
-                    setIssueDate(event.target.value)
+                    setIssueDate(
+                      event.target.value
+                    )
                   }
                   required
+                  disabled={
+                    loading
+                  }
                 />
+
               </div>
-            </div>
 
-            {error && (
-              <div className="form-message error">
-                {error}
+              {/* ERROR */}
+
+              {error && (
+
+                <div className="issue-message issue-error">
+
+                  <span>
+                    !
+                  </span>
+
+                  <p>
+                    {error}
+                  </p>
+
+                </div>
+
+              )}
+
+              {/* SUCCESS */}
+
+              {message && (
+
+                <div className="issue-message issue-success">
+
+                  <span>
+                    ✓
+                  </span>
+
+                  <div>
+
+                    <p>
+                      {message}
+                    </p>
+
+                    {credentialId !== null && (
+                      <strong>
+                        Credential ID: #
+                        {credentialId}
+                      </strong>
+                    )}
+
+                  </div>
+
+                </div>
+
+              )}
+
+              {/* TRANSACTION */}
+
+              {transactionHash && (
+
+                <div className="issue-transaction-box">
+
+                  <span>
+                    SEPOLIA TRANSACTION
+                  </span>
+
+                  <code>
+                    {transactionHash}
+                  </code>
+
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View on Etherscan →
+                  </a>
+
+                </div>
+
+              )}
+
+              {/* ACTIONS */}
+
+              <div className="issue-form-actions">
+
+                {credentialId !== null ? (
+
+                  <button
+                    type="button"
+                    className="issue-cancel-button"
+                    onClick={
+                      openCredential
+                    }
+                  >
+                    View Credential
+                  </button>
+
+                ) : (
+
+                  <Link
+                    to="/university"
+                    className="issue-cancel-button"
+                  >
+                    Cancel
+                  </Link>
+
+                )}
+
+                <button
+                  type="submit"
+                  className="issue-submit-button"
+                  disabled={
+                    loading ||
+                    !connected ||
+                    !issuerAuthorized ||
+                    issuerLoading
+                  }
+                >
+
+                  {loading
+                    ? "Issuing on Sepolia..."
+                    : "Issue Credential →"}
+
+                </button>
+
               </div>
-            )}
 
-            {message && (
-              <div className="form-message success">
-                {message}
-              </div>
-            )}
+            </form>
 
-            <div className="form-actions">
-              <Link
-                to="/university"
-                className="secondary-button"
-              >
-                Cancel
-              </Link>
-
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={loading}
-              >
-                {loading
-                  ? "Preparing Credential..."
-                  : "Issue Credential →"}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* ==========================================
-            PREVIEW / BLOCKCHAIN FLOW
-           ========================================== */}
-
-        <div className="university-panel">
-          <div className="university-panel-header">
-            <div>
-              <h2>Credential Preview</h2>
-
-              <p>
-                Review the information before issuing.
-              </p>
-            </div>
           </div>
 
-          <div className="credential-preview">
-            <div className="preview-badge">
-              EDUPROOF CREDENTIAL
+          {/* =======================================
+              RIGHT COLUMN
+          ======================================== */}
+
+          <div className="issue-right-column">
+
+            {/* PREVIEW */}
+
+            <div className="issue-card">
+
+              <div className="issue-card-header">
+
+                <div className="issue-card-icon preview-icon">
+                  ◇
+                </div>
+
+                <div>
+
+                  <h2>
+                    Credential Preview
+                  </h2>
+
+                  <p>
+                    Review the information before issuing.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="credential-preview">
+
+                <div className="preview-label">
+                  EDUPROOF CREDENTIAL
+                </div>
+
+                <h3>
+                  {degree ||
+                    "Academic Credential"}
+                </h3>
+
+                <p className="preview-institution">
+                  {institution ||
+                    "Institution not connected"}
+                </p>
+
+                <div className="preview-status-row">
+
+                  <div>
+                    <span>
+                      TYPE
+                    </span>
+
+                    <strong>
+                      {credentialType}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      VERSION
+                    </span>
+
+                    <strong>
+                      V1
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      STATUS
+                    </span>
+
+                    <strong className="draft-status">
+                      {credentialId !== null
+                        ? "ACTIVE"
+                        : "DRAFT"}
+                    </strong>
+                  </div>
+
+                </div>
+
+                <div className="preview-detail">
+
+                  <span>
+                    STUDENT DID
+                  </span>
+
+                  <strong>
+                    {studentDID ||
+                      "Not provided"}
+                  </strong>
+
+                </div>
+
+                <div className="preview-detail">
+
+                  <span>
+                    INSTITUTION ID
+                  </span>
+
+                  <strong>
+                    {institutionId ||
+                      "Not available"}
+                  </strong>
+
+                </div>
+
+                <div className="preview-detail">
+
+                  <span>
+                    ISSUE DATE
+                  </span>
+
+                  <strong>
+                    {issueDate ||
+                      "Not selected"}
+                  </strong>
+
+                </div>
+
+              </div>
+
             </div>
 
-            <h3>
-              {degree || "Academic Credential"}
-            </h3>
+            {/* ISSUANCE FLOW */}
 
-            <div className="preview-row">
-              <span>Credential Type</span>
+            <div className="issue-card">
 
-              <strong>
-                {credentialType}
-              </strong>
+              <div className="flow-heading">
+
+                <div className="flow-heading-label">
+                  BLOCKCHAIN ISSUANCE FLOW
+                </div>
+
+                <p>
+                  The actual credential issuance pipeline.
+                </p>
+
+              </div>
+
+              <div className="issuance-flow">
+
+                <div className="issuance-step">
+
+                  <div className="step-number">
+                    01
+                  </div>
+
+                  <div className="step-content">
+
+                    <strong>
+                      Credential Metadata
+                    </strong>
+
+                    <span>
+                      Academic information is prepared.
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <div className="flow-line" />
+
+                <div className="issuance-step">
+
+                  <div className="step-number">
+                    02
+                  </div>
+
+                  <div className="step-content">
+
+                    <strong>
+                      Cryptographic Hash
+                    </strong>
+
+                    <span>
+                      Credential data is hashed using
+                      the EduProof format.
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <div className="flow-line" />
+
+                <div className="issuance-step">
+
+                  <div className="step-number">
+                    03
+                  </div>
+
+                  <div className="step-content">
+
+                    <strong>
+                      University Signature
+                    </strong>
+
+                    <span>
+                      The connected issuer wallet signs
+                      the credential hash.
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <div className="flow-line" />
+
+                <div className="issuance-step">
+
+                  <div className="step-number">
+                    04
+                  </div>
+
+                  <div className="step-content">
+
+                    <strong>
+                      IPFS Metadata
+                    </strong>
+
+                    <span>
+                      The Verifiable Credential is stored
+                      off-chain.
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <div className="flow-line" />
+
+                <div className="issuance-step">
+
+                  <div className="step-number">
+                    05
+                  </div>
+
+                  <div className="step-content">
+
+                    <strong>
+                      Blockchain Record
+                    </strong>
+
+                    <span>
+                      EduProof records the credential
+                      on Ethereum Sepolia.
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
 
-            <div className="preview-row">
-              <span>Institution</span>
-
-              <strong>
-                {institution}
-              </strong>
-            </div>
-
-            <div className="preview-row">
-              <span>Institution ID</span>
-
-              <strong>
-                {institutionId}
-              </strong>
-            </div>
-
-            <div className="preview-row">
-              <span>Student DID</span>
-
-              <strong className="break-text">
-                {studentDID || "Not provided"}
-              </strong>
-            </div>
-
-            <div className="preview-row">
-              <span>Issue Date</span>
-
-              <strong>
-                {issueDate || "Not selected"}
-              </strong>
-            </div>
           </div>
 
-          <div className="issuance-flow">
-            <div className="flow-title">
-              BLOCKCHAIN ISSUANCE FLOW
-            </div>
+        </section>
 
-            <div className="flow-step">
-              <span>01</span>
-              <div>
-                <strong>
-                  Credential Metadata
-                </strong>
-
-                <small>
-                  Academic information is prepared.
-                </small>
-              </div>
-            </div>
-
-            <div className="flow-step">
-              <span>02</span>
-              <div>
-                <strong>
-                  Cryptographic Hash
-                </strong>
-
-                <small>
-                  Credential data is hashed.
-                </small>
-              </div>
-            </div>
-
-            <div className="flow-step">
-              <span>03</span>
-              <div>
-                <strong>
-                  University Signature
-                </strong>
-
-                <small>
-                  Issuer wallet signs the credential hash.
-                </small>
-              </div>
-            </div>
-
-            <div className="flow-step">
-              <span>04</span>
-              <div>
-                <strong>
-                  IPFS Metadata
-                </strong>
-
-                <small>
-                  Verifiable Credential metadata is stored
-                  off-chain.
-                </small>
-              </div>
-            </div>
-
-            <div className="flow-step">
-              <span>05</span>
-              <div>
-                <strong>
-                  Blockchain Record
-                </strong>
-
-                <small>
-                  Credential proof is recorded on Sepolia.
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </UniversityLayout>
   );
 }

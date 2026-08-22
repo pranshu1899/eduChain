@@ -4845,3 +4845,719 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================================
+   EDUPROOF - ISSUE CREDENTIAL
+   ========================================================= */
+
+.issue-credential-page {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 8px 0 48px;
+}
+
+.issue-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.issue-eyebrow {
+  color: #8175ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin-bottom: 9px;
+}
+
+.issue-page-header h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.issue-page-header p {
+  margin: 10px 0 0;
+  max-width: 650px;
+  color: #8589a3;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.issue-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.issue-secondary-button,
+.issue-cancel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 17px;
+  border: 1px solid rgba(126, 118, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #c8c9d9;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.issue-secondary-button:hover,
+.issue-cancel-button:hover {
+  background: rgba(126, 118, 255, 0.08);
+  border-color: rgba(126, 118, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.issue-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.85fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.issue-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.issue-card {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(21, 22, 38, 0.98),
+      rgba(12, 13, 25, 0.98)
+    );
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  overflow: hidden;
+}
+
+.issue-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px 25px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.issue-card-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: rgba(112, 97, 255, 0.13);
+  border: 1px solid rgba(126, 111, 255, 0.18);
+  color: #9b91ff;
+  font-size: 21px;
+  font-weight: 500;
+}
+
+.preview-icon {
+  font-size: 18px;
+}
+
+.issue-card-header h2 {
+  margin: 0;
+  color: #f3f3f8;
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 750;
+}
+
+.issue-card-header p {
+  margin: 5px 0 0;
+  color: #777b95;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.issue-form {
+  padding: 25px;
+}
+
+.issue-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+
+.issue-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 19px;
+  min-width: 0;
+}
+
+.issue-form-group.full {
+  width: 100%;
+}
+
+.issue-form-group label {
+  color: #c9cada;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.issue-form-group input,
+.issue-form-group select {
+  width: 100%;
+  height: 46px;
+  box-sizing: border-box;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(7, 8, 18, 0.72);
+  color: #f2f2f7;
+  font-family: inherit;
+  font-size: 13px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.issue-form-group input::placeholder {
+  color: #53566c;
+}
+
+.issue-form-group input:hover,
+.issue-form-group select:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.issue-form-group input:focus,
+.issue-form-group select:focus {
+  border-color: rgba(122, 108, 255, 0.8);
+  background: rgba(11, 12, 25, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(110, 94, 255, 0.11);
+}
+
+.issue-form-group select {
+  cursor: pointer;
+}
+
+.issue-form-group select option {
+  background: #11121f;
+  color: #ffffff;
+}
+
+.issue-form-group span {
+  color: #656980;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.issue-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 4px 0 18px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.issue-message span {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+}
+
+.issue-message p {
+  margin: 0;
+}
+
+.issue-error {
+  border: 1px solid rgba(255, 82, 105, 0.2);
+  background: rgba(255, 57, 84, 0.065);
+  color: #ff9aa9;
+}
+
+.issue-error span {
+  background: rgba(255, 68, 91, 0.13);
+  color: #ff697d;
+}
+
+.issue-success {
+  border: 1px solid rgba(58, 219, 148, 0.2);
+  background: rgba(39, 190, 125, 0.065);
+  color: #77e8b4;
+}
+
+.issue-success span {
+  background: rgba(46, 209, 139, 0.13);
+  color: #54dfa1;
+}
+
+.issue-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 5px;
+}
+
+.issue-submit-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    #7463ff,
+    #6855ee
+  );
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow:
+    0 8px 22px rgba(105, 87, 244, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.issue-submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 11px 28px rgba(105, 87, 244, 0.3);
+}
+
+.issue-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* =========================================================
+   CREDENTIAL PREVIEW
+   ========================================================= */
+
+.credential-preview {
+  margin: 20px;
+  padding: 22px;
+  border: 1px solid rgba(125, 111, 255, 0.14);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(105, 88, 255, 0.12),
+      transparent 38%
+    ),
+    rgba(7, 8, 18, 0.72);
+}
+
+.preview-label {
+  color: #8478ff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+}
+
+.credential-preview h3 {
+  margin: 13px 0 4px;
+  color: #f4f4f8;
+  font-size: 23px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.preview-institution {
+  margin: 0 0 21px;
+  color: #777b95;
+  font-size: 12px;
+}
+
+.preview-status-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 0;
+  margin-bottom: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.preview-status-row div {
+  min-width: 0;
+}
+
+.preview-status-row span,
+.preview-detail span {
+  display: block;
+  margin-bottom: 6px;
+  color: #5f637b;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.preview-status-row strong,
+.preview-detail strong {
+  display: block;
+  color: #dfe0e9;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.draft-status {
+  color: #e8bd68 !important;
+}
+
+.preview-detail {
+  padding: 12px 0 0;
+}
+
+.preview-detail + .preview-detail {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 11px;
+  padding-top: 12px;
+}
+
+/* =========================================================
+   ISSUANCE FLOW
+   ========================================================= */
+
+.flow-heading {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.flow-heading-label {
+  color: #8175ff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.flow-heading p {
+  margin: 6px 0 0;
+  color: #777b95;
+  font-size: 11px;
+}
+
+.issuance-flow {
+  padding: 20px 24px 23px;
+}
+
+.issuance-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.step-number {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid rgba(119, 105, 255, 0.2);
+  background: rgba(109, 93, 255, 0.08);
+  color: #9187ff;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1px;
+  min-width: 0;
+}
+
+.step-content strong {
+  color: #dfe0e9;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.step-content span {
+  margin-top: 3px;
+  color: #676b82;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.flow-line {
+  width: 1px;
+  height: 18px;
+  margin: 3px 0 3px 15px;
+  background: linear-gradient(
+    to bottom,
+    rgba(119, 105, 255, 0.35),
+    rgba(119, 105, 255, 0.05)
+  );
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1050px) {
+  .issue-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .issue-right-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .issue-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .issue-header-actions {
+    width: 100%;
+  }
+
+  .issue-secondary-button {
+    flex: 1;
+  }
+
+  .issue-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .issue-right-column {
+    display: flex;
+  }
+
+  .preview-status-row {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .issue-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .issue-submit-button,
+  .issue-cancel-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .issue-credential-page {
+    padding-bottom: 25px;
+  }
+
+  .issue-page-header h1 {
+    font-size: 27px;
+  }
+
+  .issue-header-actions {
+    flex-direction: column;
+  }
+
+  .issue-card-header {
+    padding: 19px;
+  }
+
+  .issue-form {
+    padding: 19px;
+  }
+
+  .credential-preview {
+    margin: 14px;
+    padding: 17px;
+  }
+
+  .issuance-flow {
+    padding: 17px;
+  }
+
+  .flow-heading {
+    padding: 18px 17px 14px;
+  }
+}
+
+
+/* =========================================================
+   ISSUE CREDENTIAL - LIVE BLOCKCHAIN STATUS
+   ========================================================= */
+
+.issue-wallet-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding: 13px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.issue-wallet-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.issue-wallet-left > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.issue-wallet-left span {
+  color: #666a81;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.issue-wallet-left strong {
+  color: #dfe0e9;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.issue-wallet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b6e80;
+}
+
+.issue-wallet-dot.connected {
+  background: #56dda0;
+  box-shadow: 0 0 10px rgba(86, 221, 160, 0.65);
+}
+
+.issue-connect-button,
+.issue-authorized-badge {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.issue-connect-button {
+  border: 1px solid rgba(120, 105, 255, 0.3);
+  background: rgba(105, 88, 255, 0.09);
+  color: #aaa1ff;
+  cursor: pointer;
+}
+
+.issue-connect-button:hover {
+  background: rgba(105, 88, 255, 0.15);
+}
+
+.issue-authorized-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(76, 219, 151, 0.18);
+  background: rgba(76, 219, 151, 0.07);
+  color: #69dfa8;
+}
+
+.issue-transaction-box {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 4px 0 18px;
+  padding: 13px 14px;
+  border: 1px solid rgba(111, 98, 255, 0.17);
+  border-radius: 9px;
+  background: rgba(101, 85, 255, 0.045);
+}
+
+.issue-transaction-box span {
+  color: #7068b8;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.issue-transaction-box code {
+  overflow-wrap: anywhere;
+  color: #aaa3e9;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.issue-transaction-box a {
+  width: fit-content;
+  color: #8e84ff;
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.issue-transaction-box a:hover {
+  text-decoration: underline;
+}
+
+.issue-message.issue-success > div {
+  min-width: 0;
+}
+
+.issue-message.issue-success strong {
+  display: block;
+  margin-top: 4px;
+  color: #86e8ba;
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .issue-wallet-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .issue-connect-button,
+  .issue-authorized-badge {
+    width: 100%;
+  }
+}
