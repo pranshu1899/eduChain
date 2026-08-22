@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 
 export const EDUProof_ADDRESS =
-  "0x75f4c5489E34CC1d1c67E3c302dDD76a86956e8a";
+  "0x7E86aBA8583f28E8119aD0C632a518f9cFC6A705";
 
 export const EDUProof_ABI = [
   "function getIssuer(address issuer) view returns (address wallet, string institutionName, string institutionId, uint8 status)",

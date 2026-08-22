@@ -44,6 +44,20 @@ export interface VerificationChecks {
   issuerDIDPresent: boolean;
 }
 
+export interface Issuer {
+  wallet: string;
+  institutionName: string;
+  institutionId: string;
+  status: number;
+}
+
+export interface IssuerRequest {
+  wallet: string;
+  institutionName: string;
+  institutionId: string;
+  status: number;
+}
+
 export interface IssueCredentialResult {
   credentialId: number | null;
   transactionHash: string;
@@ -72,7 +86,20 @@ export interface UpdateCredentialResult {
 }
 
 // =========================================================
-// EVENT SCANNING CONFIGURATION
+// ISSUER STATUS
+// =========================================================
+
+export const ISSUER_STATUS = {
+  NONE: 0,
+  PENDING: 1,
+  AUTHORIZED: 2,
+  SUSPENDED: 3,
+  REVOKED: 4,
+  REJECTED: 5,
+} as const;
+
+// =========================================================
+// EVENT SCANNING
 // =========================================================
 
 const EVENT_QUERY_CHUNK_SIZE = 9_000;
@@ -200,6 +227,398 @@ export async function getSignerContract() {
 }
 
 // =========================================================
+// AUTHORITY
+// =========================================================
+
+export async function getAuthority(): Promise<string> {
+  const contract =
+    await getContract();
+
+  return await contract.authority();
+}
+
+export async function isAuthority(
+  address: string
+): Promise<boolean> {
+  const authority =
+    await getAuthority();
+
+  return (
+    authority.toLowerCase() ===
+    address.toLowerCase()
+  );
+}
+
+// =========================================================
+// ISSUER REQUEST
+// =========================================================
+
+export async function requestIssuer(
+  institutionName: string,
+  institutionId: string
+): Promise<string> {
+  if (!institutionName.trim()) {
+    throw new Error(
+      "Institution name is required."
+    );
+  }
+
+  if (!institutionId.trim()) {
+    throw new Error(
+      "Institution ID is required."
+    );
+  }
+
+  const contract =
+    await getSignerContract();
+
+  const tx =
+    await contract.requestIssuer(
+      institutionName.trim(),
+      institutionId.trim()
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
+}
+
+// =========================================================
+// GET ISSUER
+// =========================================================
+
+export async function getIssuer(
+  address: string
+): Promise<Issuer> {
+  const contract =
+    await getContract();
+
+  const issuer =
+    await contract.getIssuer(
+      address
+    );
+
+  return {
+    wallet: issuer[0],
+    institutionName: issuer[1],
+    institutionId: issuer[2],
+    status: Number(issuer[3]),
+  };
+}
+
+// =========================================================
+// GET CURRENT ISSUER
+// =========================================================
+
+export async function getCurrentIssuer(): Promise<Issuer> {
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const address =
+    await signer.getAddress();
+
+  return getIssuer(address);
+}
+
+// =========================================================
+// AUTHORIZED ISSUER
+// =========================================================
+
+export async function isAuthorizedIssuer(
+  address: string
+): Promise<boolean> {
+  const contract =
+    await getContract();
+
+  return await contract.isAuthorizedIssuer(
+    address
+  );
+}
+
+// =========================================================
+// ISSUER STATUS
+// =========================================================
+
+export async function getIssuerStatus(
+  address: string
+): Promise<number> {
+  const issuer =
+    await getIssuer(address);
+
+  return issuer.status;
+}
+
+// =========================================================
+// GET PENDING ISSUER REQUESTS
+// =========================================================
+export async function getPendingIssuerRequests(): Promise<
+  IssuerRequest[]
+> {
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const signerAddress =
+    await signer.getAddress();
+
+  const authority =
+    await getAuthority();
+
+  if (
+    signerAddress.toLowerCase() !==
+    authority.toLowerCase()
+  ) {
+    throw new Error(
+      "Only the EduProof authority can view pending issuer requests."
+    );
+  }
+
+  const contract =
+    new Contract(
+      EDUProof_CONTRACT_ADDRESS,
+      EduProofArtifact.abi,
+      signer
+    );
+
+  const pendingWallets =
+    await contract.getPendingIssuerRequests();
+
+  const requests: IssuerRequest[] =
+    [];
+
+  for (
+    const wallet of pendingWallets
+  ) {
+    const issuer =
+      await getIssuer(wallet);
+
+    requests.push({
+      wallet: issuer.wallet,
+      institutionName:
+        issuer.institutionName,
+      institutionId:
+        issuer.institutionId,
+      status: issuer.status,
+    });
+  }
+
+  return requests;
+}
+// =========================================================
+// APPROVE ISSUER
+// =========================================================
+
+export async function authorizeIssuer(
+  issuerAddress: string
+): Promise<string> {
+  if (!issuerAddress) {
+    throw new Error(
+      "Issuer address is required."
+    );
+  }
+
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const signerAddress =
+    await signer.getAddress();
+
+  const authority =
+    await getAuthority();
+
+  if (
+    signerAddress.toLowerCase() !==
+    authority.toLowerCase()
+  ) {
+    throw new Error(
+      "Only the EduProof authority can approve issuers."
+    );
+  }
+
+  const contract =
+    new Contract(
+      EDUProof_CONTRACT_ADDRESS,
+      EduProofArtifact.abi,
+      signer
+    );
+
+  const tx =
+    await contract.authorizeIssuer(
+      issuerAddress
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
+}
+
+// =========================================================
+// REJECT ISSUER
+// =========================================================
+
+export async function rejectIssuer(
+  issuerAddress: string
+): Promise<string> {
+  if (!issuerAddress) {
+    throw new Error(
+      "Issuer address is required."
+    );
+  }
+
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const signerAddress =
+    await signer.getAddress();
+
+  const authority =
+    await getAuthority();
+
+  if (
+    signerAddress.toLowerCase() !==
+    authority.toLowerCase()
+  ) {
+    throw new Error(
+      "Only the EduProof authority can reject issuers."
+    );
+  }
+
+  const contract =
+    new Contract(
+      EDUProof_CONTRACT_ADDRESS,
+      EduProofArtifact.abi,
+      signer
+    );
+
+  const tx =
+    await contract.rejectIssuer(
+      issuerAddress
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
+}
+
+// =========================================================
+// SUSPEND ISSUER
+// =========================================================
+
+export async function suspendIssuer(
+  issuerAddress: string
+): Promise<string> {
+  if (!issuerAddress) {
+    throw new Error(
+      "Issuer address is required."
+    );
+  }
+
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const signerAddress =
+    await signer.getAddress();
+
+  const authority =
+    await getAuthority();
+
+  if (
+    signerAddress.toLowerCase() !==
+    authority.toLowerCase()
+  ) {
+    throw new Error(
+      "Only the EduProof authority can suspend issuers."
+    );
+  }
+
+  const contract =
+    new Contract(
+      EDUProof_CONTRACT_ADDRESS,
+      EduProofArtifact.abi,
+      signer
+    );
+
+  const tx =
+    await contract.suspendIssuer(
+      issuerAddress
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
+}
+
+// =========================================================
+// REVOKE ISSUER
+// =========================================================
+
+export async function revokeIssuer(
+  issuerAddress: string
+): Promise<string> {
+  if (!issuerAddress) {
+    throw new Error(
+      "Issuer address is required."
+    );
+  }
+
+  const provider =
+    await getProvider();
+
+  const signer =
+    await provider.getSigner();
+
+  const signerAddress =
+    await signer.getAddress();
+
+  const authority =
+    await getAuthority();
+
+  if (
+    signerAddress.toLowerCase() !==
+    authority.toLowerCase()
+  ) {
+    throw new Error(
+      "Only the EduProof authority can revoke issuers."
+    );
+  }
+
+  const contract =
+    new Contract(
+      EDUProof_CONTRACT_ADDRESS,
+      EduProofArtifact.abi,
+      signer
+    );
+
+  const tx =
+    await contract.revokeIssuer(
+      issuerAddress
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
+}
+
+// =========================================================
 // GET CREDENTIAL
 // =========================================================
 
@@ -229,52 +648,14 @@ export async function getCredential(
     ipfsUri: credential[11],
     status: Number(credential[12]),
     active:
-      Number(credential[13]) === 1,
-    createdAt: Number(credential[14]),
-    revokedAt: Number(credential[15]),
+      Number(credential[12]) === 1,
+    createdAt: Number(credential[13]),
+    revokedAt: 0,
   };
 }
 
 // =========================================================
-// AUTHORIZED ISSUER
-// =========================================================
-
-export async function isAuthorizedIssuer(
-  address: string
-): Promise<boolean> {
-  const contract =
-    await getContract();
-
-  return await contract.isAuthorizedIssuer(
-    address
-  );
-}
-
-// =========================================================
-// GET ISSUER
-// =========================================================
-
-export async function getIssuer(
-  address: string
-) {
-  const contract =
-    await getContract();
-
-  const issuer =
-    await contract.getIssuer(
-      address
-    );
-
-  return {
-    wallet: issuer[0],
-    institutionName: issuer[1],
-    institutionId: issuer[2],
-    status: Number(issuer[3]),
-  };
-}
-
-// =========================================================
-// VERSION HISTORY - IDS
+// VERSION HISTORY
 // =========================================================
 
 export async function getVersionHistory(
@@ -288,19 +669,12 @@ export async function getVersionHistory(
       credentialId
     );
 
-  const versionIds: bigint[] =
-    Array.from(
-      history as Iterable<bigint>
-    );
-
-  return versionIds.map(
+  return Array.from(
+    history as Iterable<bigint>
+  ).map(
     (id: bigint) => Number(id)
   );
 }
-
-// =========================================================
-// VERSION HISTORY - FULL RECORDS
-// =========================================================
 
 export async function getCredentialVersionHistory(
   credentialId: number
@@ -359,51 +733,36 @@ export async function getCredentialIds(): Promise<
         latestBlock
       );
 
-    try {
-      const events =
-        await contract.queryFilter(
-          filter,
-          fromBlock,
-          toBlock
-        );
+    const events =
+      await contract.queryFilter(
+        filter,
+        fromBlock,
+        toBlock
+      );
 
-      for (
-        const event of events
+    for (
+      const event of events
+    ) {
+      if (
+        "args" in event &&
+        event.args
       ) {
-        if (
-          "args" in event &&
-          event.args
-        ) {
-          const credentialId =
-            Number(
-              event.args[0]
-            );
+        const credentialId =
+          Number(
+            event.args[0]
+          );
 
-          if (
-            Number.isInteger(
-              credentialId
-            ) &&
-            credentialId > 0
-          ) {
-            ids.add(
-              credentialId
-            );
-          }
+        if (
+          Number.isInteger(
+            credentialId
+          ) &&
+          credentialId > 0
+        ) {
+          ids.add(
+            credentialId
+          );
         }
       }
-    } catch (error) {
-      console.error(
-        `Failed to scan blocks ${fromBlock}-${toBlock}:`,
-        error
-      );
-
-      throw new Error(
-        `Unable to read EduProof events from Sepolia blocks ${fromBlock}-${toBlock}. ${
-          error instanceof Error
-            ? error.message
-            : "Unknown RPC error."
-        }`
-      );
     }
 
     fromBlock =
@@ -443,7 +802,7 @@ export async function getAllCredentials(): Promise<
 }
 
 // =========================================================
-// FETCH IPFS VERIFIABLE CREDENTIAL
+// FETCH IPFS VC
 // =========================================================
 
 export async function fetchVerifiableCredential(
@@ -466,102 +825,27 @@ export async function fetchVerifiableCredential(
     );
   }
 
-  const primaryUrl =
+  const url =
     buildIpfsGatewayUrl(cid);
 
-  const fallbackUrls = [
-    primaryUrl,
-    `https://gateway.pinata.cloud/ipfs/${cid}`,
-  ];
+  const response =
+    await fetch(url, {
+      headers: {
+        Accept:
+          "application/json",
+      },
+    });
 
-  const uniqueUrls =
-    Array.from(
-      new Set(fallbackUrls)
+  if (!response.ok) {
+    throw new Error(
+      `IPFS request failed: ${response.status}`
     );
-
-  let lastError: unknown =
-    null;
-
-  for (
-    const url of uniqueUrls
-  ) {
-    try {
-      console.log(
-        "Fetching IPFS credential:",
-        url
-      );
-
-      const response =
-        await fetch(url, {
-          method: "GET",
-          headers: {
-            Accept:
-              "application/json",
-          },
-        });
-
-      if (!response.ok) {
-        throw new Error(
-          `IPFS request failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const contentType =
-        response.headers.get(
-          "content-type"
-        );
-
-      const text =
-        await response.text();
-
-      if (!text.trim()) {
-        throw new Error(
-          "IPFS gateway returned an empty response."
-        );
-      }
-
-      let data: unknown;
-
-      try {
-        data =
-          JSON.parse(text);
-      } catch {
-        throw new Error(
-          `IPFS gateway returned non-JSON content${
-            contentType
-              ? ` (${contentType})`
-              : ""
-          }.`
-        );
-      }
-
-      if (
-        !data ||
-        typeof data !== "object"
-      ) {
-        throw new Error(
-          "Invalid verifiable credential data returned from IPFS."
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.error(
-        `IPFS gateway failed: ${url}`,
-        error
-      );
-
-      lastError = error;
-    }
   }
 
-  throw new Error(
-    `Unable to fetch credential from IPFS. ${
-      lastError instanceof Error
-        ? lastError.message
-        : "Unknown error."
-    }`
-  );
+  const data =
+    await response.json();
+
+  return data;
 }
 
 // =========================================================
@@ -579,18 +863,10 @@ export async function verifyCredential(
       credentialId
     );
 
-  // -------------------------------------------------------
-  // FETCH VC FROM IPFS
-  // -------------------------------------------------------
-
   const verifiableCredential =
     await fetchVerifiableCredential(
       credential.ipfsUri
     );
-
-  // -------------------------------------------------------
-  // HASH
-  // -------------------------------------------------------
 
   const vcHash =
     verifiableCredential
@@ -602,34 +878,18 @@ export async function verifyCredential(
     vcHash.toLowerCase() ===
       credential.credentialHash.toLowerCase();
 
-  // -------------------------------------------------------
-  // SIGNATURE
-  // -------------------------------------------------------
-
   const signatureValid =
     await contract.verifyCredentialSignature(
       credentialId
     );
-
-  // -------------------------------------------------------
-  // ISSUER
-  // -------------------------------------------------------
 
   const issuerAuthorized =
     await isAuthorizedIssuer(
       credential.issuer
     );
 
-  // -------------------------------------------------------
-  // STATUS
-  // -------------------------------------------------------
-
   const credentialActive =
     credential.active;
-
-  // -------------------------------------------------------
-  // STUDENT DID
-  // -------------------------------------------------------
 
   const vcStudentDID =
     verifiableCredential
@@ -641,10 +901,6 @@ export async function verifyCredential(
     vcStudentDID ===
       credential.studentDID;
 
-  // -------------------------------------------------------
-  // ISSUER DID
-  // -------------------------------------------------------
-
   const vcIssuerDID =
     verifiableCredential
       ?.issuer
@@ -653,10 +909,6 @@ export async function verifyCredential(
   const issuerDIDPresent =
     typeof vcIssuerDID === "string" &&
     vcIssuerDID.length > 0;
-
-  // -------------------------------------------------------
-  // FINAL
-  // -------------------------------------------------------
 
   const verified =
     hashMatches &&
@@ -720,7 +972,7 @@ export function createCredentialHash(
 }
 
 // =========================================================
-// UPLOAD VC TO PINATA
+// PINATA UPLOAD
 // =========================================================
 
 async function uploadToPinata(
@@ -780,42 +1032,38 @@ async function uploadToPinata(
     );
   }
 
-  return result.IpfsHash as string;
+  return result.IpfsHash;
 }
 
 // =========================================================
-// EXTRACT CREDENTIAL ID FROM RECEIPT
+// EXTRACT CREDENTIAL ID
 // =========================================================
 
 function extractCredentialId(
   contract: Contract,
   receipt: any
 ): number | null {
-  try {
-    for (
-      const log of receipt.logs
-    ) {
-      try {
-        const parsed =
-          contract.interface.parseLog(
-            log
-          );
+  for (
+    const log of receipt.logs
+  ) {
+    try {
+      const parsed =
+        contract.interface.parseLog(
+          log
+        );
 
-        if (
-          parsed &&
-          parsed.name ===
-            "CredentialIssued"
-        ) {
-          return Number(
-            parsed.args[0]
-          );
-        }
-      } catch {
-        // Ignore unrelated logs.
+      if (
+        parsed &&
+        parsed.name ===
+          "CredentialIssued"
+      ) {
+        return Number(
+          parsed.args[0]
+        );
       }
+    } catch {
+      // Ignore unrelated logs.
     }
-  } catch {
-    // Event parsing is optional.
   }
 
   return null;
@@ -864,10 +1112,6 @@ export async function issueCredential(
   const issuerAddress =
     await signer.getAddress();
 
-  // -------------------------------------------------------
-  // CHECK ISSUER
-  // -------------------------------------------------------
-
   const authorized =
     await isAuthorizedIssuer(
       issuerAddress
@@ -878,10 +1122,6 @@ export async function issueCredential(
       "Connected wallet is not an authorized university issuer."
     );
   }
-
-  // -------------------------------------------------------
-  // GET UNIVERSITY DATA
-  // -------------------------------------------------------
 
   const issuer =
     await getIssuer(
@@ -906,15 +1146,7 @@ export async function issueCredential(
     );
   }
 
-  // -------------------------------------------------------
-  // VERSION
-  // -------------------------------------------------------
-
   const version = 1;
-
-  // -------------------------------------------------------
-  // HASH
-  // -------------------------------------------------------
 
   const credentialHash =
     createCredentialHash(
@@ -927,20 +1159,12 @@ export async function issueCredential(
       version
     );
 
-  // -------------------------------------------------------
-  // SIGN
-  // -------------------------------------------------------
-
   const signature =
     await signer.signMessage(
       getBytes(
         credentialHash
       )
     );
-
-  // -------------------------------------------------------
-  // VERIFIABLE CREDENTIAL
-  // -------------------------------------------------------
 
   const verifiableCredential = {
     "@context": [
@@ -975,13 +1199,10 @@ export async function issueCredential(
         "EcdsaSecp256k1Signature",
 
       credentialHash,
+
       signature,
     },
   };
-
-  // -------------------------------------------------------
-  // IPFS
-  // -------------------------------------------------------
 
   const cid =
     await uploadToPinata(
@@ -991,20 +1212,12 @@ export async function issueCredential(
   const ipfsUri =
     `ipfs://${cid}`;
 
-  // -------------------------------------------------------
-  // CONTRACT
-  // -------------------------------------------------------
-
   const contract =
     new Contract(
       EDUProof_CONTRACT_ADDRESS,
       EduProofArtifact.abi,
       signer
     );
-
-  // -------------------------------------------------------
-  // ISSUE
-  // -------------------------------------------------------
 
   const tx =
     await contract.issueCredential(
@@ -1065,53 +1278,6 @@ export async function updateCredential(
   newDegree: string,
   newIssueDate: string
 ): Promise<UpdateCredentialResult> {
-  if (
-    !Number.isInteger(
-      credentialId
-    ) ||
-    credentialId <= 0
-  ) {
-    throw new Error(
-      "Invalid credential ID."
-    );
-  }
-
-  if (!newStudentDID.trim()) {
-    throw new Error(
-      "Student DID is required."
-    );
-  }
-
-  if (!newCredentialType.trim()) {
-    throw new Error(
-      "Credential type is required."
-    );
-  }
-
-  if (!newInstitution.trim()) {
-    throw new Error(
-      "Institution is required."
-    );
-  }
-
-  if (!newInstitutionId.trim()) {
-    throw new Error(
-      "Institution ID is required."
-    );
-  }
-
-  if (!newDegree.trim()) {
-    throw new Error(
-      "Degree is required."
-    );
-  }
-
-  if (!newIssueDate.trim()) {
-    throw new Error(
-      "Issue date is required."
-    );
-  }
-
   const provider =
     await getProvider();
 
@@ -1120,10 +1286,6 @@ export async function updateCredential(
 
   const issuerAddress =
     await signer.getAddress();
-
-  // -------------------------------------------------------
-  // CURRENT CREDENTIAL
-  // -------------------------------------------------------
 
   const currentCredential =
     await getCredential(
@@ -1135,10 +1297,6 @@ export async function updateCredential(
       "Only an active credential can be updated."
     );
   }
-
-  // -------------------------------------------------------
-  // CHECK ISSUER
-  // -------------------------------------------------------
 
   if (
     currentCredential.issuer.toLowerCase() !==
@@ -1160,16 +1318,8 @@ export async function updateCredential(
     );
   }
 
-  // -------------------------------------------------------
-  // NEW VERSION
-  // -------------------------------------------------------
-
   const newVersion =
     currentCredential.version + 1;
-
-  // -------------------------------------------------------
-  // HASH
-  // -------------------------------------------------------
 
   const newCredentialHash =
     createCredentialHash(
@@ -1182,20 +1332,12 @@ export async function updateCredential(
       newVersion
     );
 
-  // -------------------------------------------------------
-  // SIGN
-  // -------------------------------------------------------
-
   const newSignature =
     await signer.signMessage(
       getBytes(
         newCredentialHash
       )
     );
-
-  // -------------------------------------------------------
-  // VERIFIABLE CREDENTIAL
-  // -------------------------------------------------------
 
   const verifiableCredential = {
     "@context": [
@@ -1248,10 +1390,6 @@ export async function updateCredential(
     },
   };
 
-  // -------------------------------------------------------
-  // IPFS
-  // -------------------------------------------------------
-
   const cid =
     await uploadToPinata(
       verifiableCredential
@@ -1260,20 +1398,12 @@ export async function updateCredential(
   const ipfsUri =
     `ipfs://${cid}`;
 
-  // -------------------------------------------------------
-  // CONTRACT
-  // -------------------------------------------------------
-
   const contract =
     new Contract(
       EDUProof_CONTRACT_ADDRESS,
       EduProofArtifact.abi,
       signer
     );
-
-  // -------------------------------------------------------
-  // UPDATE
-  // -------------------------------------------------------
 
   const tx =
     await contract.updateCredential(
@@ -1329,4 +1459,25 @@ export async function updateCredential(
 
     verifiableCredential,
   };
+}
+
+// =========================================================
+// REVOKE CREDENTIAL
+// =========================================================
+
+export async function revokeCredential(
+  credentialId: number
+): Promise<string> {
+  const contract =
+    await getSignerContract();
+
+  const tx =
+    await contract.revokeCredential(
+      credentialId
+    );
+
+  const receipt =
+    await tx.wait();
+
+  return receipt.hash;
 }

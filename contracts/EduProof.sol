@@ -19,7 +19,8 @@ contract EduProof {
         PENDING,
         AUTHORIZED,
         SUSPENDED,
-        REVOKED
+        REVOKED,
+        REJECTED
     }
 
     struct Issuer {
@@ -30,6 +31,9 @@ contract EduProof {
     }
 
     mapping(address => Issuer) public issuers;
+
+    // Stores every wallet that has ever requested/been registered.
+    address[] private issuerRequestList;
 
     // =========================================================
     // CREDENTIAL
@@ -46,28 +50,22 @@ contract EduProof {
         uint256 id;
         uint256 rootCredentialId;
         address issuer;
-
         string studentDID;
         string credentialType;
-
         string institution;
         string institutionId;
         string degree;
         string issueDate;
-
         bytes32 credentialHash;
         bytes signature;
         string cid;
-
         uint256 version;
         CredentialStatus status;
-
         uint256 issuedAt;
         uint256 previousVersionId;
     }
 
-    mapping(uint256 => Credential)
-        public credentials;
+    mapping(uint256 => Credential) public credentials;
 
     uint256 private nextCredentialId = 1;
 
@@ -85,7 +83,6 @@ contract EduProof {
     uint256 public totalIssuersRegistered;
     uint256 public totalIssuersAuthorized;
 
-    // Issuer-specific analytics
     mapping(address => uint256)
         public issuerCredentialsIssued;
 
@@ -99,6 +96,12 @@ contract EduProof {
     // EVENTS
     // =========================================================
 
+    event IssuerRequested(
+        address indexed issuer,
+        string institutionName,
+        string institutionId
+    );
+
     event IssuerRegistered(
         address indexed issuer,
         string institutionName,
@@ -106,6 +109,10 @@ contract EduProof {
     );
 
     event IssuerAuthorized(
+        address indexed issuer
+    );
+
+    event IssuerRejected(
         address indexed issuer
     );
 
@@ -160,7 +167,6 @@ contract EduProof {
             msg.sender == authority,
             "Not authorized authority"
         );
-
         _;
     }
 
@@ -170,14 +176,77 @@ contract EduProof {
                 IssuerStatus.AUTHORIZED,
             "Issuer not authorized"
         );
-
         _;
     }
 
     // =========================================================
-    // ISSUER MANAGEMENT
+    // ISSUER REQUEST
     // =========================================================
 
+    /*
+        Anyone can request to become a university issuer.
+
+        The wallet starts in PENDING status.
+        Only the authority can approve or reject it.
+    */
+    function requestIssuer(
+        string calldata institutionName,
+        string calldata institutionId
+    )
+        external
+    {
+        require(
+            bytes(institutionName).length > 0,
+            "Institution name required"
+        );
+
+        require(
+            bytes(institutionId).length > 0,
+            "Institution ID required"
+        );
+
+        IssuerStatus currentStatus =
+            issuers[msg.sender].status;
+
+        require(
+            currentStatus == IssuerStatus.NONE ||
+            currentStatus == IssuerStatus.REJECTED,
+            "Issuer request already exists"
+        );
+
+        issuers[msg.sender] = Issuer({
+            wallet: msg.sender,
+            institutionName: institutionName,
+            institutionId: institutionId,
+            status: IssuerStatus.PENDING
+        });
+
+        issuerRequestList.push(msg.sender);
+
+        totalIssuersRegistered++;
+
+        emit IssuerRequested(
+            msg.sender,
+            institutionName,
+            institutionId
+        );
+
+        emit IssuerRegistered(
+            msg.sender,
+            institutionName,
+            institutionId
+        );
+    }
+
+    // =========================================================
+    // ADMIN / AUTHORITY ISSUER MANAGEMENT
+    // =========================================================
+
+    /*
+        Existing direct registration functionality.
+
+        The authority can still directly register an issuer.
+    */
     function registerIssuer(
         address issuer,
         string calldata institutionName,
@@ -189,6 +258,16 @@ contract EduProof {
         require(
             issuer != address(0),
             "Invalid issuer"
+        );
+
+        require(
+            bytes(institutionName).length > 0,
+            "Institution name required"
+        );
+
+        require(
+            bytes(institutionId).length > 0,
+            "Institution ID required"
         );
 
         require(
@@ -204,6 +283,8 @@ contract EduProof {
             status: IssuerStatus.PENDING
         });
 
+        issuerRequestList.push(issuer);
+
         totalIssuersRegistered++;
 
         emit IssuerRegistered(
@@ -212,6 +293,10 @@ contract EduProof {
             institutionId
         );
     }
+
+    // =========================================================
+    // APPROVE ISSUER
+    // =========================================================
 
     function authorizeIssuer(
         address issuer
@@ -233,6 +318,32 @@ contract EduProof {
         emit IssuerAuthorized(issuer);
     }
 
+    // =========================================================
+    // REJECT ISSUER
+    // =========================================================
+
+    function rejectIssuer(
+        address issuer
+    )
+        external
+        onlyAuthority
+    {
+        require(
+            issuers[issuer].status ==
+                IssuerStatus.PENDING,
+            "Issuer not pending"
+        );
+
+        issuers[issuer].status =
+            IssuerStatus.REJECTED;
+
+        emit IssuerRejected(issuer);
+    }
+
+    // =========================================================
+    // SUSPEND ISSUER
+    // =========================================================
+
     function suspendIssuer(
         address issuer
     )
@@ -251,6 +362,10 @@ contract EduProof {
         emit IssuerSuspended(issuer);
     }
 
+    // =========================================================
+    // REVOKE ISSUER
+    // =========================================================
+
     function revokeIssuer(
         address issuer
     )
@@ -268,6 +383,62 @@ contract EduProof {
 
         emit IssuerRevoked(issuer);
     }
+
+    // =========================================================
+    // GET PENDING ISSUER REQUESTS
+    // =========================================================
+
+    function getPendingIssuerRequests()
+        external
+        view
+        onlyAuthority
+        returns (address[] memory)
+    {
+        uint256 pendingCount = 0;
+
+        for (
+            uint256 i = 0;
+            i < issuerRequestList.length;
+            i++
+        ) {
+            if (
+                issuers[
+                    issuerRequestList[i]
+                ].status ==
+                IssuerStatus.PENDING
+            ) {
+                pendingCount++;
+            }
+        }
+
+        address[] memory pendingIssuers =
+            new address[](pendingCount);
+
+        uint256 index = 0;
+
+        for (
+            uint256 i = 0;
+            i < issuerRequestList.length;
+            i++
+        ) {
+            address issuer =
+                issuerRequestList[i];
+
+            if (
+                issuers[issuer].status ==
+                IssuerStatus.PENDING
+            ) {
+                pendingIssuers[index] = issuer;
+                index++;
+            }
+        }
+
+        return pendingIssuers;
+    }
+
+    // =========================================================
+    // GET ISSUER
+    // =========================================================
 
     function isAuthorizedIssuer(
         address issuer
@@ -344,38 +515,20 @@ contract EduProof {
         Credential memory newCredential =
             Credential({
                 id: credentialId,
-
-                // IMPORTANT:
-                // root credential points to itself
-                rootCredentialId:
-                    credentialId,
-
+                rootCredentialId: credentialId,
                 issuer: msg.sender,
-
                 studentDID: studentDID,
                 credentialType: credentialType,
-
                 institution: institution,
                 institutionId: institutionId,
                 degree: degree,
                 issueDate: issueDate,
-
-                credentialHash:
-                    credentialHash,
-
-                signature:
-                    signature,
-
+                credentialHash: credentialHash,
+                signature: signature,
                 cid: cid,
-
                 version: 1,
-
-                status:
-                    CredentialStatus.ACTIVE,
-
-                issuedAt:
-                    block.timestamp,
-
+                status: CredentialStatus.ACTIVE,
+                issuedAt: block.timestamp,
                 previousVersionId: 0
             });
 
@@ -386,7 +539,6 @@ contract EduProof {
             credentialId
         ].push(credentialId);
 
-        // Analytics
         totalCredentialsIssued++;
 
         issuerCredentialsIssued[
@@ -483,50 +635,21 @@ contract EduProof {
         Credential memory updatedCredential =
             Credential({
                 id: newCredentialId,
-
-                rootCredentialId:
-                    rootId,
-
+                rootCredentialId: rootId,
                 issuer: msg.sender,
-
-                studentDID:
-                    newStudentDID,
-
-                credentialType:
-                    newCredentialType,
-
-                institution:
-                    newInstitution,
-
-                institutionId:
-                    newInstitutionId,
-
-                degree:
-                    newDegree,
-
-                issueDate:
-                    newIssueDate,
-
-                credentialHash:
-                    newCredentialHash,
-
-                signature:
-                    newSignature,
-
-                cid:
-                    newCid,
-
-                version:
-                    newVersion,
-
-                status:
-                    CredentialStatus.ACTIVE,
-
-                issuedAt:
-                    block.timestamp,
-
-                previousVersionId:
-                    credentialId
+                studentDID: newStudentDID,
+                credentialType: newCredentialType,
+                institution: newInstitution,
+                institutionId: newInstitutionId,
+                degree: newDegree,
+                issueDate: newIssueDate,
+                credentialHash: newCredentialHash,
+                signature: newSignature,
+                cid: newCid,
+                version: newVersion,
+                status: CredentialStatus.ACTIVE,
+                issuedAt: block.timestamp,
+                previousVersionId: credentialId
             });
 
         credentials[newCredentialId] =
@@ -535,7 +658,6 @@ contract EduProof {
         credentialVersions[rootId]
             .push(newCredentialId);
 
-        // Analytics
         totalCredentialsUpdated++;
 
         issuerCredentialsUpdated[
@@ -587,7 +709,6 @@ contract EduProof {
         credential.status =
             CredentialStatus.REVOKED;
 
-        // Analytics
         totalCredentialsRevoked++;
 
         issuerCredentialsRevoked[
@@ -652,10 +773,13 @@ contract EduProof {
                 )
             );
 
-        (bytes32 r, bytes32 s, uint8 v) =
-            _splitSignature(
-                credential.signature
-            );
+        (
+            bytes32 r,
+            bytes32 s,
+            uint8 v
+        ) = _splitSignature(
+            credential.signature
+        );
 
         address signer =
             ecrecover(
@@ -670,13 +794,6 @@ contract EduProof {
 
     // =========================================================
     // RECORD VERIFICATION
-    // =========================================================
-    //
-    // This is state-changing because we want
-    // verification analytics on-chain.
-    //
-    // Frontend can call this when a verifier
-    // performs an actual verification.
     // =========================================================
 
     function recordVerification(
@@ -759,46 +876,46 @@ contract EduProof {
     // SIGNATURE HELPER
     // =========================================================
 
-   function _splitSignature(
-    bytes memory signature
-)
-    internal
-    pure
-    returns (
-        bytes32 r,
-        bytes32 s,
-        uint8 v
+    function _splitSignature(
+        bytes memory signature
     )
-{
-    require(
-        signature.length == 65,
-        "Invalid signature length"
-    );
-
-    assembly ("memory-safe") {
-        r := mload(
-            add(signature, 32)
+        internal
+        pure
+        returns (
+            bytes32 r,
+            bytes32 s,
+            uint8 v
         )
+    {
+        require(
+            signature.length == 65,
+            "Invalid signature length"
+        );
 
-        s := mload(
-            add(signature, 64)
-        )
-
-        v := byte(
-            0,
-            mload(
-                add(signature, 96)
+        assembly ("memory-safe") {
+            r := mload(
+                add(signature, 32)
             )
-        )
-    }
 
-    if (v < 27) {
-        v += 27;
-    }
+            s := mload(
+                add(signature, 64)
+            )
 
-    require(
-        v == 27 || v == 28,
-        "Invalid signature"
-    );
-}
+            v := byte(
+                0,
+                mload(
+                    add(signature, 96)
+                )
+            )
+        }
+
+        if (v < 27) {
+            v += 27;
+        }
+
+        require(
+            v == 27 || v == 28,
+            "Invalid signature"
+        );
+    }
 }

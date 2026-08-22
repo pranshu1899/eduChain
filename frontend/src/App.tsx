@@ -34,23 +34,31 @@ import StudentCredentialDetails from "./pages/Student/StudentCredentialDetails";
 import VerifierPage from "./pages/Verifier/VerifierPage";
 
 /* =====================================================
+   ISSUER APPLICATION
+   ===================================================== */
+
+import RequestIssuer from "./pages/RequestIssuer";
+
+/* =====================================================
+   ADMIN
+   ===================================================== */
+
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+
+/* =====================================================
    LANDING PAGE
    ===================================================== */
 
 function LandingPage() {
   return (
     <div className="landing-page">
-
       <header className="landing-header">
-
         <div className="brand">
-
           <div className="brand-mark">
             E
           </div>
 
           <div>
-
             <div className="brand-name">
               EduProof
             </div>
@@ -58,15 +66,11 @@ function LandingPage() {
             <div className="brand-subtitle">
               Decentralized Academic Credentials
             </div>
-
           </div>
-
         </div>
-
       </header>
 
       <main className="landing-main">
-
         <div className="landing-eyebrow">
           EDUPROOF PLATFORM
         </div>
@@ -82,13 +86,14 @@ function LandingPage() {
 
         <div className="role-grid">
 
-          {/* UNIVERSITY */}
+          {/* =================================================
+              UNIVERSITY
+              ================================================= */}
 
           <Link
             to="/university"
             className="role-card university"
           >
-
             <div className="role-icon">
               🏛️
             </div>
@@ -110,16 +115,16 @@ function LandingPage() {
               Enter University Portal
               <span>→</span>
             </div>
-
           </Link>
 
-          {/* STUDENT */}
+          {/* =================================================
+              STUDENT
+              ================================================= */}
 
           <Link
             to="/student"
             className="role-card student"
           >
-
             <div className="role-icon">
               🎓
             </div>
@@ -141,16 +146,16 @@ function LandingPage() {
               Enter Student Portal
               <span>→</span>
             </div>
-
           </Link>
 
-          {/* VERIFIER */}
+          {/* =================================================
+              VERIFIER
+              ================================================= */}
 
           <Link
             to="/verify"
             className="role-card verifier"
           >
-
             <div className="role-icon">
               🔍
             </div>
@@ -172,13 +177,73 @@ function LandingPage() {
               Open Verification Center
               <span>→</span>
             </div>
+          </Link>
 
+          {/* =================================================
+              ISSUER APPLICATION
+              ================================================= */}
+
+          <Link
+            to="/request-issuer"
+            className="role-card university"
+          >
+            <div className="role-icon">
+              📝
+            </div>
+
+            <div className="role-label">
+              ISSUER APPLICATION
+            </div>
+
+            <h2>
+              Become an Issuer
+            </h2>
+
+            <p>
+              Apply for university issuer authorization.
+              Approval is required before credentials can
+              be issued.
+            </p>
+
+            <div className="role-action">
+              Apply for Authorization
+              <span>→</span>
+            </div>
+          </Link>
+
+          {/* =================================================
+              ADMIN
+              ================================================= */}
+
+          <Link
+            to="/admin"
+            className="role-card verifier"
+          >
+            <div className="role-icon">
+              🛡️
+            </div>
+
+            <div className="role-label">
+              PLATFORM AUTHORITY
+            </div>
+
+            <h2>
+              Admin
+            </h2>
+
+            <p>
+              Review issuer applications and authorize
+              trusted institutions to issue credentials.
+            </p>
+
+            <div className="role-action">
+              Open Admin Portal
+              <span>→</span>
+            </div>
           </Link>
 
         </div>
-
       </main>
-
     </div>
   );
 }
@@ -190,7 +255,6 @@ function LandingPage() {
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         {/* =================================================
@@ -199,9 +263,25 @@ function App() {
 
         <Route
           path="/"
-          element={
-            <LandingPage />
-          }
+          element={<LandingPage />}
+        />
+
+        {/* =================================================
+            ISSUER APPLICATION
+            ================================================= */}
+
+        <Route
+          path="/request-issuer"
+          element={<RequestIssuer />}
+        />
+
+        {/* =================================================
+            ADMIN
+            ================================================= */}
+
+        <Route
+          path="/admin"
+          element={<AdminDashboard />}
         />
 
         {/* =================================================
@@ -210,58 +290,42 @@ function App() {
 
         <Route
           path="/university"
-          element={
-            <UniversityDashboard />
-          }
+          element={<UniversityDashboard />}
         />
 
         <Route
           path="/university/issue"
-          element={
-            <IssueCredential />
-          }
+          element={<IssueCredential />}
         />
 
         <Route
           path="/university/credentials"
-          element={
-            <UniversityCredentials />
-          }
+          element={<UniversityCredentials />}
         />
 
         <Route
           path="/university/credentials/:id"
-          element={
-            <UniversityCredentialDetails />
-          }
+          element={<UniversityCredentialDetails />}
         />
 
         <Route
           path="/university/verify"
-          element={
-            <UniversityVerify />
-          }
+          element={<UniversityVerify />}
         />
 
         <Route
           path="/university/revoke/:id"
-          element={
-            <UniversityRevokeCredential />
-          }
+          element={<UniversityRevokeCredential />}
         />
 
         <Route
           path="/university/analytics"
-          element={
-            <UniversityAnalytics />
-          }
+          element={<UniversityAnalytics />}
         />
 
         <Route
           path="/university/*"
-          element={
-            <UniversityDashboard />
-          }
+          element={<UniversityDashboard />}
         />
 
         {/* =================================================
@@ -270,30 +334,22 @@ function App() {
 
         <Route
           path="/student"
-          element={
-            <StudentDashboard />
-          }
+          element={<StudentDashboard />}
         />
 
         <Route
           path="/student/credentials"
-          element={
-            <StudentDashboard />
-          }
+          element={<StudentDashboard />}
         />
 
         <Route
           path="/student/credentials/:id"
-          element={
-            <StudentCredentialDetails />
-          }
+          element={<StudentCredentialDetails />}
         />
 
         <Route
           path="/student/*"
-          element={
-            <StudentDashboard />
-          }
+          element={<StudentDashboard />}
         />
 
         {/* =================================================
@@ -302,16 +358,12 @@ function App() {
 
         <Route
           path="/verify"
-          element={
-            <VerifierPage />
-          }
+          element={<VerifierPage />}
         />
 
         <Route
           path="/verify/*"
-          element={
-            <VerifierPage />
-          }
+          element={<VerifierPage />}
         />
 
         {/* =================================================
@@ -329,7 +381,6 @@ function App() {
         />
 
       </Routes>
-
     </BrowserRouter>
   );
 }
