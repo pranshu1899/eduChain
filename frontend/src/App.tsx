@@ -356,11 +356,23 @@ function App() {
             PUBLIC VERIFIER
             ================================================= */}
 
+        {/* Normal manual verification */}
         <Route
           path="/verify"
           element={<VerifierPage />}
         />
 
+        {/* QR CODE VERIFICATION
+            Example:
+            /verify/2
+            /verify/17
+        */}
+        <Route
+          path="/verify/:id"
+          element={<VerifierPage />}
+        />
+
+        {/* Existing verifier fallback */}
         <Route
           path="/verify/*"
           element={<VerifierPage />}

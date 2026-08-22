@@ -1,7 +1,12 @@
 import {
   type FormEvent,
+  useEffect,
   useState,
 } from "react";
+
+import {
+  useParams,
+} from "react-router-dom";
 
 import {
   getReadOnlyContract,
@@ -37,8 +42,6 @@ interface Credential {
  * 1 = ACTIVE
  * 2 = SUPERSEDED
  * 3 = REVOKED
- *
- * Keep this mapping identical everywhere in the frontend.
  */
 
 function statusText(status: number) {
@@ -120,10 +123,35 @@ function shortenValue(
 }
 
 export default function VerifierPage() {
+
+  /*
+   * =========================================================
+   * QR / URL PARAMETER
+   * =========================================================
+   *
+   * Normal verification:
+   *
+   * /verify
+   *
+   * QR verification:
+   *
+   * /verify/2
+   *
+   * The credential ID comes from the URL.
+   */
+
+  const {
+    id: routeCredentialId,
+  } = useParams<{
+    id?: string;
+  }>();
+
   const [
     credentialId,
     setCredentialId,
-  ] = useState("");
+  ] = useState(
+    routeCredentialId ?? "",
+  );
 
   const [
     credential,
@@ -160,159 +188,214 @@ export default function VerifierPage() {
    * =========================================================
    */
 
-  const verifyCredential =
+  const verifyCredential = async (
+    idValue: string,
+  ) => {
+
+    setError("");
+    setCredential(null);
+    setSignatureValid(null);
+    setHasSearched(true);
+
+    const id = Number(
+      idValue.trim(),
+    );
+
+    if (
+      !Number.isInteger(id) ||
+      id <= 0
+    ) {
+      setError(
+        "Enter a valid credential ID.",
+      );
+
+      return;
+    }
+
+    try {
+
+      setLoading(true);
+
+      const contract =
+        getReadOnlyContract();
+
+      /*
+       * Read credential directly
+       * from the Sepolia contract.
+       */
+
+      const result =
+        await contract.getCredential(
+          id,
+        );
+
+      const loadedCredential:
+        Credential = {
+        id: Number(
+          result.id,
+        ),
+
+        rootCredentialId:
+          Number(
+            result.rootCredentialId,
+          ),
+
+        issuer:
+          String(
+            result.issuer,
+          ),
+
+        studentDID:
+          String(
+            result.studentDID,
+          ),
+
+        credentialType:
+          String(
+            result.credentialType,
+          ),
+
+        institution:
+          String(
+            result.institution,
+          ),
+
+        institutionId:
+          String(
+            result.institutionId,
+          ),
+
+        degree:
+          String(
+            result.degree,
+          ),
+
+        issueDate:
+          String(
+            result.issueDate,
+          ),
+
+        credentialHash:
+          String(
+            result.credentialHash,
+          ),
+
+        signature:
+          String(
+            result.signature,
+          ),
+
+        cid:
+          String(
+            result.cid,
+          ),
+
+        version:
+          Number(
+            result.version,
+          ),
+
+        status:
+          Number(
+            result.status,
+          ),
+
+        issuedAt:
+          Number(
+            result.issuedAt,
+          ),
+
+        previousVersionId:
+          Number(
+            result.previousVersionId,
+          ),
+      };
+
+      setCredential(
+        loadedCredential,
+      );
+
+      /*
+       * Verify issuer signature independently.
+       */
+
+      const valid =
+        await contract.verifyCredentialSignature(
+          id,
+        );
+
+      setSignatureValid(
+        Boolean(valid),
+      );
+
+    } catch (verificationError) {
+
+      console.error(
+        "Credential verification failed:",
+        verificationError,
+      );
+
+      setError(
+        "Credential not found or could not be read from the Sepolia blockchain.",
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+  /*
+   * =========================================================
+   * QR AUTO-VERIFICATION
+   * =========================================================
+   *
+   * If the verifier opens:
+   *
+   * /verify/2
+   *
+   * automatically verify credential #2.
+   *
+   * If they open:
+   *
+   * /verify
+   *
+   * normal manual verification remains available.
+   */
+
+  useEffect(() => {
+
+    if (!routeCredentialId) {
+      return;
+    }
+
+    setCredentialId(
+      routeCredentialId,
+    );
+
+    void verifyCredential(
+      routeCredentialId,
+    );
+
+  }, [routeCredentialId]);
+
+  /*
+   * =========================================================
+   * MANUAL FORM SUBMISSION
+   * =========================================================
+   */
+
+  const handleManualVerification =
     async (
       event: FormEvent<HTMLFormElement>,
     ) => {
+
       event.preventDefault();
 
-      setError("");
-      setCredential(null);
-      setSignatureValid(null);
-      setHasSearched(true);
-
-      const id = Number(
-        credentialId.trim(),
+      await verifyCredential(
+        credentialId,
       );
-
-      if (
-        !Number.isInteger(id) ||
-        id <= 0
-      ) {
-        setError(
-          "Enter a valid credential ID.",
-        );
-
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        const contract =
-          getReadOnlyContract();
-
-        /*
-         * Read credential directly
-         * from the Sepolia contract.
-         */
-
-        const result =
-          await contract.getCredential(
-            id,
-          );
-
-        const loadedCredential:
-          Credential = {
-          id: Number(
-            result.id,
-          ),
-
-          rootCredentialId:
-            Number(
-              result.rootCredentialId,
-            ),
-
-          issuer:
-            String(
-              result.issuer,
-            ),
-
-          studentDID:
-            String(
-              result.studentDID,
-            ),
-
-          credentialType:
-            String(
-              result.credentialType,
-            ),
-
-          institution:
-            String(
-              result.institution,
-            ),
-
-          institutionId:
-            String(
-              result.institutionId,
-            ),
-
-          degree:
-            String(
-              result.degree,
-            ),
-
-          issueDate:
-            String(
-              result.issueDate,
-            ),
-
-          credentialHash:
-            String(
-              result.credentialHash,
-            ),
-
-          signature:
-            String(
-              result.signature,
-            ),
-
-          cid:
-            String(
-              result.cid,
-            ),
-
-          version:
-            Number(
-              result.version,
-            ),
-
-          status:
-            Number(
-              result.status,
-            ),
-
-          issuedAt:
-            Number(
-              result.issuedAt,
-            ),
-
-          previousVersionId:
-            Number(
-              result.previousVersionId,
-            ),
-        };
-
-        setCredential(
-          loadedCredential,
-        );
-
-        /*
-         * Verify issuer signature independently.
-         */
-
-        const valid =
-          await contract.verifyCredentialSignature(
-            id,
-          );
-
-        setSignatureValid(
-          Boolean(valid),
-        );
-
-      } catch (verificationError) {
-        console.error(
-          "Credential verification failed:",
-          verificationError,
-        );
-
-        setError(
-          "Credential not found or could not be read from the Sepolia blockchain.",
-        );
-      } finally {
-        setLoading(false);
-      }
     };
 
   /*
@@ -323,21 +406,23 @@ export default function VerifierPage() {
 
   const resetVerification =
     () => {
+
       setCredentialId("");
       setCredential(null);
       setSignatureValid(null);
       setError("");
       setHasSearched(false);
+
+      /*
+       * We intentionally do not navigate here.
+       * This keeps the current route behaviour simple.
+       */
     };
 
   /*
    * =========================================================
-   * IMPORTANT STATUS LOGIC
+   * STATUS LOGIC
    * =========================================================
-   *
-   * ACTIVE = 1
-   * SUPERSEDED = 2
-   * REVOKED = 3
    */
 
   const isActive =
@@ -356,6 +441,12 @@ export default function VerifierPage() {
     credential !== null &&
     signatureValid === true &&
     isActive;
+
+  /*
+   * =========================================================
+   * RENDER
+   * =========================================================
+   */
 
   return (
     <div className="verifier-page">
@@ -435,8 +526,9 @@ export default function VerifierPage() {
               </h2>
 
               <p>
-                Enter the credential ID stored on
-                the EduProof blockchain.
+                {routeCredentialId
+                  ? `Credential #${routeCredentialId} was opened from a verification link.`
+                  : "Enter the credential ID stored on the EduProof blockchain."}
               </p>
 
             </div>
@@ -445,7 +537,7 @@ export default function VerifierPage() {
 
           <form
             onSubmit={
-              verifyCredential
+              handleManualVerification
             }
             className="verifier-form"
           >
@@ -487,6 +579,32 @@ export default function VerifierPage() {
           </form>
 
         </section>
+
+        {/* =================================================
+            QR VERIFICATION NOTICE
+            ================================================= */}
+
+        {routeCredentialId &&
+          loading && (
+
+            <section className="verifier-empty">
+
+              <div className="verifier-empty-icon">
+                ↻
+              </div>
+
+              <h3>
+                Verifying Credential #{routeCredentialId}
+              </h3>
+
+              <p>
+                Checking the credential directly against
+                the EduProof blockchain.
+              </p>
+
+            </section>
+
+          )}
 
         {/* =================================================
             ERROR

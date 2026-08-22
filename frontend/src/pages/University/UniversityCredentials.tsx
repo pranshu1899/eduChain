@@ -138,8 +138,7 @@ export default function UniversityCredentials() {
 
   const [totalIssued, setTotalIssued] = useState(0);
   const [totalRevoked, setTotalRevoked] = useState(0);
-  const [totalUpdated, setTotalUpdated] = useState(0);
-
+  const [, setTotalUpdated] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
