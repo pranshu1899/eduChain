@@ -8,6 +8,10 @@ import {
 
 import "./App.css";
 
+/* =====================================================
+   UNIVERSITY
+   ===================================================== */
+
 import UniversityDashboard from "./pages/University/UniversityDashboard";
 import IssueCredential from "./pages/University/IssueCredential";
 import UniversityCredentials from "./pages/University/UniversityCredentials";
@@ -15,6 +19,19 @@ import UniversityCredentialDetails from "./pages/University/UniversityCredential
 import UniversityVerify from "./pages/University/UniversityVerify";
 import UniversityRevokeCredential from "./pages/University/UniversityRevokeCredential";
 import UniversityAnalytics from "./pages/University/UniversityAnalytics";
+
+/* =====================================================
+   STUDENT
+   ===================================================== */
+
+import StudentDashboard from "./pages/Student/StudentDashboard";
+import StudentCredentialDetails from "./pages/Student/StudentCredentialDetails";
+
+/* =====================================================
+   PUBLIC VERIFIER
+   ===================================================== */
+
+import VerifierPage from "./pages/Verifier/VerifierPage";
 
 /* =====================================================
    LANDING PAGE
@@ -25,6 +42,7 @@ function LandingPage() {
     <div className="landing-page">
 
       <header className="landing-header">
+
         <div className="brand">
 
           <div className="brand-mark">
@@ -32,6 +50,7 @@ function LandingPage() {
           </div>
 
           <div>
+
             <div className="brand-name">
               EduProof
             </div>
@@ -39,9 +58,11 @@ function LandingPage() {
             <div className="brand-subtitle">
               Decentralized Academic Credentials
             </div>
+
           </div>
 
         </div>
+
       </header>
 
       <main className="landing-main">
@@ -55,9 +76,8 @@ function LandingPage() {
         </h1>
 
         <p className="landing-description">
-          Select the interface that matches what you
-          want to do. Each role has its own focused
-          workspace.
+          Select the interface that matches what you want
+          to do. Each role has its own focused workspace.
         </p>
 
         <div className="role-grid">
@@ -68,6 +88,7 @@ function LandingPage() {
             to="/university"
             className="role-card university"
           >
+
             <div className="role-icon">
               🏛️
             </div>
@@ -89,6 +110,7 @@ function LandingPage() {
               Enter University Portal
               <span>→</span>
             </div>
+
           </Link>
 
           {/* STUDENT */}
@@ -97,6 +119,7 @@ function LandingPage() {
             to="/student"
             className="role-card student"
           >
+
             <div className="role-icon">
               🎓
             </div>
@@ -110,14 +133,15 @@ function LandingPage() {
             </h2>
 
             <p>
-              View your credentials, versions, status
-              and blockchain proof.
+              View your credentials, versions, status and
+              blockchain proof.
             </p>
 
             <div className="role-action">
               Enter Student Portal
               <span>→</span>
             </div>
+
           </Link>
 
           {/* VERIFIER */}
@@ -126,6 +150,7 @@ function LandingPage() {
             to="/verify"
             className="role-card verifier"
           >
+
             <div className="role-icon">
               🔍
             </div>
@@ -139,96 +164,20 @@ function LandingPage() {
             </h2>
 
             <p>
-              Verify academic credentials without
-              needing a university wallet.
+              Verify academic credentials without needing
+              a university wallet.
             </p>
 
             <div className="role-action">
               Open Verification Center
               <span>→</span>
             </div>
+
           </Link>
 
         </div>
+
       </main>
-    </div>
-  );
-}
-
-/* =====================================================
-   STUDENT PLACEHOLDER
-   ===================================================== */
-
-function StudentPage() {
-  return (
-    <div className="placeholder-page">
-
-      <div className="placeholder-card">
-
-        <div className="placeholder-icon">
-          🎓
-        </div>
-
-        <div className="landing-eyebrow">
-          STUDENT PORTAL
-        </div>
-
-        <h1>
-          Student Dashboard
-        </h1>
-
-        <p>
-          Student workspace will be built here.
-        </p>
-
-        <Link
-          to="/"
-          className="back-link"
-        >
-          ← Back to role selection
-        </Link>
-
-      </div>
-
-    </div>
-  );
-}
-
-/* =====================================================
-   PUBLIC VERIFIER PLACEHOLDER
-   ===================================================== */
-
-function VerifierPage() {
-  return (
-    <div className="placeholder-page">
-
-      <div className="placeholder-card">
-
-        <div className="placeholder-icon">
-          🔍
-        </div>
-
-        <div className="landing-eyebrow">
-          VERIFICATION CENTER
-        </div>
-
-        <h1>
-          Verify Credential
-        </h1>
-
-        <p>
-          Public verification workspace will be
-          built here.
-        </p>
-
-        <Link
-          to="/"
-          className="back-link"
-        >
-          ← Back to role selection
-        </Link>
-
-      </div>
 
     </div>
   );
@@ -250,39 +199,35 @@ function App() {
 
         <Route
           path="/"
-          element={<LandingPage />}
+          element={
+            <LandingPage />
+          }
         />
 
         {/* =================================================
-            UNIVERSITY DASHBOARD
+            UNIVERSITY
             ================================================= */}
 
         <Route
           path="/university"
-          element={<UniversityDashboard />}
+          element={
+            <UniversityDashboard />
+          }
         />
-
-        {/* =================================================
-            ISSUE CREDENTIAL
-            ================================================= */}
 
         <Route
           path="/university/issue"
-          element={<IssueCredential />}
+          element={
+            <IssueCredential />
+          }
         />
-
-        {/* =================================================
-            UNIVERSITY CREDENTIALS
-            ================================================= */}
 
         <Route
           path="/university/credentials"
-          element={<UniversityCredentials />}
+          element={
+            <UniversityCredentials />
+          }
         />
-
-        {/* =================================================
-            CREDENTIAL DETAILS
-            ================================================= */}
 
         <Route
           path="/university/credentials/:id"
@@ -291,42 +236,32 @@ function App() {
           }
         />
 
-        {/* =================================================
-            VERIFY CREDENTIAL
-            ================================================= */}
-
         <Route
           path="/university/verify"
-          element={<UniversityVerify />}
+          element={
+            <UniversityVerify />
+          }
         />
 
-        {/* =================================================
-            REVOKE CREDENTIAL
-            ================================================= */}
-
         <Route
-          path="/university/revoke"
+          path="/university/revoke/:id"
           element={
             <UniversityRevokeCredential />
           }
         />
 
-        {/* =================================================
-            UNIVERSITY ANALYTICS
-            ================================================= */}
-
         <Route
           path="/university/analytics"
-          element={<UniversityAnalytics />}
+          element={
+            <UniversityAnalytics />
+          }
         />
-
-        {/* =================================================
-            UNIVERSITY FALLBACK
-            ================================================= */}
 
         <Route
           path="/university/*"
-          element={<UniversityDashboard />}
+          element={
+            <UniversityDashboard />
+          }
         />
 
         {/* =================================================
@@ -334,8 +269,31 @@ function App() {
             ================================================= */}
 
         <Route
+          path="/student"
+          element={
+            <StudentDashboard />
+          }
+        />
+
+        <Route
+          path="/student/credentials"
+          element={
+            <StudentDashboard />
+          }
+        />
+
+        <Route
+          path="/student/credentials/:id"
+          element={
+            <StudentCredentialDetails />
+          }
+        />
+
+        <Route
           path="/student/*"
-          element={<StudentPage />}
+          element={
+            <StudentDashboard />
+          }
         />
 
         {/* =================================================
@@ -343,12 +301,21 @@ function App() {
             ================================================= */}
 
         <Route
+          path="/verify"
+          element={
+            <VerifierPage />
+          }
+        />
+
+        <Route
           path="/verify/*"
-          element={<VerifierPage />}
+          element={
+            <VerifierPage />
+          }
         />
 
         {/* =================================================
-            UNKNOWN ROUTES
+            UNKNOWN ROUTE
             ================================================= */}
 
         <Route
