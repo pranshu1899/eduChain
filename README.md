@@ -1,57 +1,87 @@
-# Sample Hardhat 3 Project (`mocha` and `ethers`)
+# EduProof
 
-This project showcases a Hardhat 3 project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+### Blockchain-Based Verifiable Digital Credential Platform
 
-To learn more about Hardhat 3, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3](https://hardhat.org/hardhat3-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+EduProof is a decentralized academic credential platform designed to make educational credentials **verifiable, tamper-evident, lifecycle-aware, and trustable without relying entirely on centralized verification systems**.
 
-## Project Overview
+The platform connects universities, students, administrators, and public verifiers through a blockchain-backed credential infrastructure.
 
-This example project includes:
+Instead of treating a certificate as a static document, EduProof treats it as a **verifiable digital credential with a complete lifecycle**:
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+> **Issuer Accreditation → Credential Issuance → Student Ownership → Verification → Versioning → Revocation**
 
-## Usage
+---
 
-### Running Tests
+## Table of Contents
 
-To run all the tests in the project, execute the following command:
+- [Overview](#overview)
+- [Problem](#problem)
+- [Our Solution](#our-solution)
+- [Why EduProof Is Different](#why-eduproof-is-different)
+- [Key Features](#key-features)
+- [Unique Features](#unique-features)
+- [System Architecture](#system-architecture)
+- [Platform Roles](#platform-roles)
+- [Credential Lifecycle](#credential-lifecycle)
+- [Blockchain Design](#blockchain-design)
+- [On-Chain vs Off-Chain Data](#on-chain-vs-off-chain-data)
+- [Security Model](#security-model)
+- [Verification Process](#verification-process)
+- [Issuer Authorization](#issuer-authorization)
+- [Credential Versioning](#credential-versioning)
+- [Revocation](#revocation)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Smart Contract](#smart-contract)
+- [Frontend](#frontend)
+- [Getting Started](#getting-started)
+- [Environment Configuration](#environment-configuration)
+- [Running the Project](#running-the-project)
+- [Testing the DApp](#testing-the-dapp)
+- [Deployment](#deployment)
+- [Demo Flow](#demo-flow)
+- [Limitations](#limitations)
+- [Future Enhancements](#future-enhancements)
+- [Selection-Worthy Highlights](#selection-worthy-highlights)
+- [Team](#team)
+- [License](#license)
 
-```shell
-npx hardhat test
-```
+---
 
-You can also selectively run the Solidity or `mocha` tests:
+# Overview
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+Educational credentials are commonly issued as PDFs, paper certificates, or records stored inside centralized institutional systems.
 
-### Make a deployment to Sepolia
+These approaches create several problems:
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+- Credentials can be forged or modified.
+- Verification can require contacting the issuing institution.
+- Centralized databases become critical points of trust and failure.
+- Revoked or corrected credentials are difficult to track consistently.
+- Students often have limited control over how their credentials are shared.
+- Employers and other verifiers need a reliable way to determine whether a credential is authentic and still valid.
 
-To run the deployment to a local chain:
+EduProof addresses these challenges using blockchain technology, cryptographic verification, decentralized storage, and controlled issuer authorization.
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+The platform does **not** store sensitive academic information directly on-chain.
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+Instead, blockchain is used as a **trust and verification layer**, while credential metadata can remain off-chain.
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+---
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+# Problem
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
+Traditional academic credential verification is often:
 
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+```text
+Student
+   ↓
+Provides Certificate
+   ↓
+Employer / Institution
+   ↓
+Contacts University
+   ↓
+University Checks Database
+   ↓
+Verification Result
