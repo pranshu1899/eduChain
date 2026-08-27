@@ -17,8 +17,8 @@ import {
 const STORAGE_KEY = "eduproof:evidence:v1";
 
 /* =====================================================
-   WALLET
-   ===================================================== */
+ * WALLET
+ * ===================================================== */
 
 interface EthereumProvider {
   request(args: {
@@ -29,9 +29,11 @@ interface EthereumProvider {
 
 function getEthereum(): EthereumProvider | null {
   return (
-    (window as Window & {
-      ethereum?: EthereumProvider;
-    }).ethereum ?? null
+    (
+      window as Window & {
+        ethereum?: EthereumProvider;
+      }
+    ).ethereum ?? null
   );
 }
 
@@ -43,16 +45,26 @@ export async function getConnectedWallet(): Promise<{
   const ethereum = getEthereum();
 
   if (!ethereum) {
-    throw new Error("MetaMask is not installed.");
+    throw new Error(
+      "MetaMask is not installed.",
+    );
   }
 
-  const provider = new ethers.BrowserProvider(ethereum);
+  const provider =
+    new ethers.BrowserProvider(
+      ethereum,
+    );
 
-  await provider.send("eth_requestAccounts", []);
+  await provider.send(
+    "eth_requestAccounts",
+    [],
+  );
 
-  const signer = await provider.getSigner();
+  const signer =
+    await provider.getSigner();
 
-  const address = await signer.getAddress();
+  const address =
+    await signer.getAddress();
 
   return {
     provider,
@@ -62,70 +74,100 @@ export async function getConnectedWallet(): Promise<{
 }
 
 /* =====================================================
-   CREATE EVIDENCE
-   ===================================================== */
+ * CREATE EVIDENCE
+ * ===================================================== */
 
 /**
  * Creates an evidence proof using the exact same
- * canonicalization + serialization pipeline that is
- * used by hashEvidence().
+ * canonicalization + serialization pipeline used
+ * by hashEvidence().
  *
- * This prevents canonicalData from disagreeing with
- * the actual cryptographic hash.
+ * This guarantees that canonicalData and evidenceHash
+ * always represent the same evidence.
  */
 export function createEvidence(
   input: EvidenceInput,
 ): EvidenceProof {
-  const canonical = canonicalizeEvidence(input);
+  const canonical =
+    canonicalizeEvidence(input);
 
-  const canonicalData = serializeEvidence(input);
+  const canonicalData =
+    serializeEvidence(input);
 
-  const evidenceHash = hashEvidence(input);
+  const evidenceHash =
+    hashEvidence(input);
 
-  const normalizedEvidence: EvidenceInput = {
-    ...input,
+  /*
+   * Store the normalized representation.
+   *
+   * This is important because later operations should
+   * operate on exactly the data that was hashed.
+   */
+  const normalizedEvidence:
+    EvidenceInput = {
+      ...input,
 
-    title: canonical.title,
+      title:
+        canonical.title,
 
-    description: canonical.description,
+      description:
+        canonical.description,
 
-    owner: canonical.owner,
+      owner:
+        canonical.owner,
 
-    repository: canonical.repository,
+      repository:
+        canonical.repository,
 
-    repositoryCommit:
-      canonical.repositoryCommit,
+      repositoryCommit:
+        canonical.repositoryCommit,
 
-    skills: canonical.skills,
+      skills:
+        canonical.skills,
 
-    timestamp: canonical.timestamp,
-  };
+      timestamp:
+        canonical.timestamp,
+
+      details:
+        canonical.details,
+    };
 
   return {
-    evidence: normalizedEvidence,
+    evidence:
+      normalizedEvidence,
 
     canonicalData,
 
     evidenceHash,
 
-    status: "DRAFT",
+    status:
+      "DRAFT",
 
-    createdAt: Date.now(),
+    createdAt:
+      Date.now(),
   };
 }
 
 /* =====================================================
-   SIGN EVIDENCE
-   ===================================================== */
+ * SIGN EVIDENCE
+ * ===================================================== */
 
+/**
+ * Signs the exact evidence hash with the connected wallet.
+ */
 export async function signEvidenceProof(
   proof: EvidenceProof,
 ): Promise<EvidenceProof> {
   const {
     signer,
     address,
-  } = await getConnectedWallet();
+  } =
+    await getConnectedWallet();
 
+  /*
+   * The wallet signing the evidence must be the
+   * owner recorded inside the evidence.
+   */
   if (
     address.toLowerCase() !==
     proof.evidence.owner.toLowerCase()
@@ -138,12 +180,13 @@ export async function signEvidenceProof(
   /*
    * Recalculate the hash before signing.
    *
-   * This protects against accidental mutation of the
-   * evidence object after it was initially created.
+   * This prevents signing evidence that was modified
+   * after the original proof was created.
    */
-  const recalculatedHash = hashEvidence(
-    proof.evidence,
-  );
+  const recalculatedHash =
+    hashEvidence(
+      proof.evidence,
+    );
 
   if (
     recalculatedHash.toLowerCase() !==
@@ -154,10 +197,11 @@ export async function signEvidenceProof(
     );
   }
 
-  const signature = await signEvidence(
-    signer,
-    proof.evidenceHash,
-  );
+  const signature =
+    await signEvidence(
+      signer,
+      proof.evidenceHash,
+    );
 
   const recoveredSigner =
     recoverEvidenceSigner(
@@ -184,25 +228,30 @@ export async function signEvidenceProof(
 
     ownerVerified,
 
-    status: "SIGNED",
+    status:
+      "SIGNED",
   };
 }
 
 /* =====================================================
-   LOCAL PERSISTENCE
-   ===================================================== */
+ * LOCAL PERSISTENCE
+ * ===================================================== */
 
-function readStoredEvidence(): StoredEvidence[] {
+function readStoredEvidence():
+  StoredEvidence[] {
   try {
-    const raw = localStorage.getItem(
-      STORAGE_KEY,
-    );
+    const raw =
+      localStorage.getItem(
+        STORAGE_KEY,
+      );
 
     if (!raw) {
       return [];
     }
 
-    const parsed: unknown = JSON.parse(raw);
+    const parsed:
+      unknown =
+      JSON.parse(raw);
 
     if (!Array.isArray(parsed)) {
       return [];
@@ -229,64 +278,84 @@ function writeStoredEvidence(
 }
 
 /* =====================================================
-   SAVE
-   ===================================================== */
+ * SAVE
+ * ===================================================== */
 
 export function saveEvidence(
   proof: EvidenceProof,
 ): StoredEvidence {
-  const now = Date.now();
+  const now =
+    Date.now();
 
-  const stored: StoredEvidence = {
-    ...proof,
+  const stored:
+    StoredEvidence = {
+      ...proof,
 
-    id: `${proof.evidenceHash}-${now}`,
+      id:
+        `${proof.evidenceHash}-${now}`,
 
-    updatedAt: now,
-  };
+      updatedAt:
+        now,
+    };
 
-  const existing = readStoredEvidence();
+  const existing =
+    readStoredEvidence();
 
-  existing.unshift(stored);
+  existing.unshift(
+    stored,
+  );
 
-  writeStoredEvidence(existing);
+  writeStoredEvidence(
+    existing,
+  );
 
   return stored;
 }
 
 /* =====================================================
-   UPDATE
-   ===================================================== */
+ * UPDATE
+ * ===================================================== */
 
 export function updateStoredEvidence(
   evidence: StoredEvidence,
 ): StoredEvidence {
-  const existing = readStoredEvidence();
+  const existing =
+    readStoredEvidence();
 
-  const updated: StoredEvidence = {
-    ...evidence,
+  const updated:
+    StoredEvidence = {
+      ...evidence,
 
-    updatedAt: Date.now(),
-  };
+      updatedAt:
+        Date.now(),
+    };
 
-  const index = existing.findIndex(
-    (item) => item.id === evidence.id,
-  );
+  const index =
+    existing.findIndex(
+      (item) =>
+        item.id ===
+        evidence.id,
+    );
 
   if (index === -1) {
-    existing.unshift(updated);
+    existing.unshift(
+      updated,
+    );
   } else {
-    existing[index] = updated;
+    existing[index] =
+      updated;
   }
 
-  writeStoredEvidence(existing);
+  writeStoredEvidence(
+    existing,
+  );
 
   return updated;
 }
 
 /* =====================================================
-   MARK ANCHORED
-   ===================================================== */
+ * MARK ANCHORED
+ * ===================================================== */
 
 /**
  * Updates a locally stored evidence record after
@@ -297,134 +366,167 @@ export function markEvidenceAnchored(
   transactionHash: string,
   blockNumber: number,
 ): StoredEvidence | null {
-  const existing = readStoredEvidence();
+  const existing =
+    readStoredEvidence();
 
-  const index = existing.findIndex(
-    (item) => item.id === evidenceId,
-  );
+  const index =
+    existing.findIndex(
+      (item) =>
+        item.id ===
+        evidenceId,
+    );
 
   if (index === -1) {
     return null;
   }
 
-  const updated: StoredEvidence = {
-    ...existing[index],
+  const updated:
+    StoredEvidence = {
+      ...existing[index],
 
-    status: "ANCHORED",
+      status:
+        "ANCHORED",
 
-    anchorTransactionHash:
-      transactionHash,
+      anchorTransactionHash:
+        transactionHash,
 
-    anchorBlockNumber:
-      blockNumber,
+      anchorBlockNumber:
+        blockNumber,
 
-    updatedAt: Date.now(),
-  };
+      updatedAt:
+        Date.now(),
+    };
 
-  existing[index] = updated;
+  existing[index] =
+    updated;
 
-  writeStoredEvidence(existing);
+  writeStoredEvidence(
+    existing,
+  );
 
   return updated;
 }
 
 /* =====================================================
-   MARK REVOKED
-   ===================================================== */
+ * MARK REVOKED
+ * ===================================================== */
 
 /**
  * Updates a locally stored evidence record after
- * the blockchain confirms revocation.
+ * blockchain revocation is confirmed.
  */
 export function markEvidenceRevoked(
   evidenceId: string,
 ): StoredEvidence | null {
-  const existing = readStoredEvidence();
+  const existing =
+    readStoredEvidence();
 
-  const index = existing.findIndex(
-    (item) => item.id === evidenceId,
-  );
+  const index =
+    existing.findIndex(
+      (item) =>
+        item.id ===
+        evidenceId,
+    );
 
   if (index === -1) {
     return null;
   }
 
-  const updated: StoredEvidence = {
-    ...existing[index],
+  const updated:
+    StoredEvidence = {
+      ...existing[index],
 
-    status: "REVOKED",
+      status:
+        "REVOKED",
 
-    updatedAt: Date.now(),
-  };
+      updatedAt:
+        Date.now(),
+    };
 
-  existing[index] = updated;
+  existing[index] =
+    updated;
 
-  writeStoredEvidence(existing);
+  writeStoredEvidence(
+    existing,
+  );
 
   return updated;
 }
 
 /* =====================================================
-   GET ALL
-   ===================================================== */
+ * GET ALL
+ * ===================================================== */
 
-export function getStoredEvidence(): StoredEvidence[] {
+export function getStoredEvidence():
+  StoredEvidence[] {
   return readStoredEvidence();
 }
 
 /* =====================================================
-   GET BY ID
-   ===================================================== */
+ * GET BY ID
+ * ===================================================== */
 
 export function getStoredEvidenceById(
   id: string,
 ): StoredEvidence | null {
-  const evidence = readStoredEvidence();
+  const evidence =
+    readStoredEvidence();
 
   return (
     evidence.find(
-      (item) => item.id === id,
+      (item) =>
+        item.id === id,
     ) ?? null
   );
 }
 
 /* =====================================================
-   GET BY OWNER
-   ===================================================== */
+ * GET BY OWNER
+ * ===================================================== */
 
 export function getEvidenceByOwner(
   owner: string,
 ): StoredEvidence[] {
   const normalizedOwner =
-    owner.trim().toLowerCase();
+    owner
+      .trim()
+      .toLowerCase();
 
   return readStoredEvidence().filter(
     (item) =>
-      item.evidence.owner.toLowerCase() ===
+      item.evidence.owner
+        .toLowerCase() ===
       normalizedOwner,
   );
 }
 
 /* =====================================================
-   DELETE
-   ===================================================== */
+ * DELETE
+ * ===================================================== */
 
 export function deleteStoredEvidence(
   id: string,
 ): void {
-  const existing = readStoredEvidence();
+  const existing =
+    readStoredEvidence();
 
-  const filtered = existing.filter(
-    (item) => item.id !== id,
+  const filtered =
+    existing.filter(
+      (item) =>
+        item.id !== id,
+    );
+
+  writeStoredEvidence(
+    filtered,
   );
-
-  writeStoredEvidence(filtered);
 }
 
 /* =====================================================
-   CLEAR ALL
-   ===================================================== */
+ * CLEAR ALL
+ * ===================================================== */
 
 export function clearStoredEvidence(): void {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(
+    STORAGE_KEY,
+  );
 }

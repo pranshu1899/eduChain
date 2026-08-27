@@ -296,6 +296,17 @@ export default function EvidenceTest() {
     setSkillsInput,
   ] = useState("");
 
+  const [projectTechnologies, setProjectTechnologies] = useState("");
+  const [courseProvider, setCourseProvider] = useState("");
+  const [courseName, setCourseName] = useState("");
+  const [courseCompletionDate, setCourseCompletionDate] = useState("");
+  const [courseCredentialId, setCourseCredentialId] = useState("");
+  const [hackathonName, setHackathonName] = useState("");
+  const [hackathonOrganizer, setHackathonOrganizer] = useState("");
+  const [hackathonDate, setHackathonDate] = useState("");
+  const [hackathonResult, setHackathonResult] = useState("");
+  const [hackathonTeamSize, setHackathonTeamSize] = useState("");
+
   const [
     timestamp,
     setTimestamp,
@@ -896,126 +907,75 @@ export default function EvidenceTest() {
 
   const buildEvidence =
     (): EvidenceInput => {
-      if (!walletAddress) {
-        throw new Error(
-          "Connect your wallet first.",
-        );
+      if (!walletAddress) throw new Error("Connect your wallet first.");
+      if (!title.trim()) throw new Error("Evidence title is required.");
+      if (!description.trim()) throw new Error("Evidence description is required.");
+      if (!owner.trim()) throw new Error("Evidence owner is required.");
+      if (owner.toLowerCase() !== walletAddress.toLowerCase()) {
+        throw new Error("Evidence owner must match the connected wallet.");
       }
 
-      if (!title.trim()) {
-        throw new Error(
-          "Evidence title is required.",
-        );
+      if (evidenceType === "PROJECT") {
+        if (!githubIdentity) throw new Error("Connect your GitHub account before creating project evidence.");
+        if (!repository.trim()) throw new Error("A GitHub repository is required for project evidence.");
+        if (!githubEvidence) throw new Error("Verify the GitHub repository before creating project evidence.");
+        if (!repositoryCommit.trim()) throw new Error("A verified GitHub commit is required for project evidence.");
+        if (repositoryCommit.toLowerCase() !== githubEvidence.commitSha.toLowerCase()) {
+          throw new Error("GitHub commit verification is stale. Verify the repository again.");
+        }
+        if (githubEvidence.ownerId !== githubIdentity.id) {
+          throw new Error("GitHub identity does not match the verified repository owner.");
+        }
+        if (!projectTechnologies.trim()) throw new Error("Add the technologies used in the project.");
       }
 
-      if (!description.trim()) {
-        throw new Error(
-          "Evidence description is required.",
-        );
+      if (evidenceType === "COURSE") {
+        if (!courseProvider.trim()) throw new Error("Course provider or institution is required.");
+        if (!courseName.trim()) throw new Error("Course name is required.");
+        if (!courseCompletionDate.trim()) throw new Error("Course completion date is required.");
       }
 
-      if (!owner.trim()) {
-        throw new Error(
-          "Evidence owner is required.",
-        );
+      if (evidenceType === "HACKATHON") {
+        if (!hackathonName.trim()) throw new Error("Hackathon name is required.");
+        if (!hackathonOrganizer.trim()) throw new Error("Hackathon organizer is required.");
+        if (!hackathonDate.trim()) throw new Error("Hackathon date is required.");
+        if (!hackathonResult.trim()) throw new Error("Select the hackathon result or participation status.");
       }
 
-      if (
-        owner.toLowerCase() !==
-        walletAddress.toLowerCase()
-      ) {
-        throw new Error(
-          "Evidence owner must match the connected wallet.",
-        );
-      }
+      const skills = skillsInput.split(",").map((skill) => skill.trim()).filter(Boolean);
 
-      if (
-        evidenceType ===
-        "PROJECT"
-      ) {
-        if (!githubIdentity) {
-          throw new Error(
-            "Connect GitHub before creating project evidence.",
-          );
-        }
-
-        if (!repository.trim()) {
-          throw new Error(
-            "A GitHub repository is required for project evidence.",
-          );
-        }
-
-        if (!githubEvidence) {
-          throw new Error(
-            "Verify the GitHub repository before creating evidence.",
-          );
-        }
-
-        if (!repositoryCommit.trim()) {
-          throw new Error(
-            "A verified GitHub commit is required.",
-          );
-        }
-
-        if (
-          repositoryCommit.toLowerCase() !==
-          githubEvidence.commitSha.toLowerCase()
-        ) {
-          throw new Error(
-            "GitHub commit verification is stale. Verify the repository again.",
-          );
-        }
-
-        if (
-          githubEvidence.ownerId !==
-          githubIdentity.id
-        ) {
-          throw new Error(
-            "GitHub identity does not match the verified repository owner.",
-          );
-        }
-      }
-
-      const skills =
-        skillsInput
-          .split(",")
-          .map(
-            (
-              skill,
-            ) =>
-              skill.trim(),
-          )
-          .filter(Boolean);
+      const details = {
+        project: evidenceType === "PROJECT" ? {
+          projectName: title.trim(),
+          technologies: projectTechnologies.split(",").map((item) => item.trim()).filter(Boolean),
+          repository: repository.trim(),
+          verifiedCommit: repositoryCommit.trim(),
+        } : undefined,
+        course: evidenceType === "COURSE" ? {
+          provider: courseProvider.trim(),
+          courseName: courseName.trim(),
+          completionDate: courseCompletionDate,
+          credentialId: courseCredentialId.trim() || undefined,
+        } : undefined,
+        hackathon: evidenceType === "HACKATHON" ? {
+          name: hackathonName.trim(),
+          organizer: hackathonOrganizer.trim(),
+          date: hackathonDate,
+          result: hackathonResult.trim(),
+          teamSize: hackathonTeamSize.trim() ? Number(hackathonTeamSize) : undefined,
+        } : undefined,
+      } as EvidenceInput["details"];
 
       return {
-        type:
-          evidenceType,
-
-        title:
-          title.trim(),
-
-        description:
-          description.trim(),
-
-        owner:
-          owner
-            .trim()
-            .toLowerCase(),
-
-        repository:
-          repository.trim() ||
-          undefined,
-
-        repositoryCommit:
-          repositoryCommit.trim() ||
-          undefined,
-
+        type: evidenceType,
+        title: title.trim(),
+        description: description.trim(),
+        owner: owner.trim().toLowerCase(),
+        repository: evidenceType === "PROJECT" ? repository.trim() || undefined : undefined,
+        repositoryCommit: evidenceType === "PROJECT" ? repositoryCommit.trim() || undefined : undefined,
         skills,
-
-        timestamp:
-          Math.floor(
-            timestamp,
-          ),
+        timestamp: Math.floor(timestamp),
+        details,
       };
     };
 
@@ -1985,12 +1945,23 @@ export default function EvidenceTest() {
               </span>
 
               <h2>
-                Describe your achievement
+                {evidenceType === "PROJECT"
+                  ? "Document your project"
+                  : evidenceType === "COURSE"
+                    ? "Document your course"
+                    : evidenceType === "HACKATHON"
+                      ? "Document your hackathon"
+                      : "Describe your evidence"}
               </h2>
 
               <p>
-                Evidence is normalized before its
-                cryptographic commitment is generated.
+                {evidenceType === "PROJECT"
+                  ? "Project evidence is linked to a verified GitHub repository and commit."
+                  : evidenceType === "COURSE"
+                    ? "Course evidence records the provider, completion and credential reference."
+                    : evidenceType === "HACKATHON"
+                      ? "Hackathon evidence records the event, organizer and outcome."
+                      : "Evidence is normalized before its cryptographic commitment is generated."}
               </p>
 
             </div>
@@ -2277,6 +2248,181 @@ export default function EvidenceTest() {
               )}
 
             </div>
+
+            {evidenceType === "PROJECT" && (
+              <>
+                <div className="student-form-field">
+                  <label>PROJECT TECHNOLOGIES</label>
+                  <input
+                    type="text"
+                    value={projectTechnologies}
+                    onChange={(event) => setProjectTechnologies(event.target.value)}
+                    placeholder="Solidity, React, TypeScript, Ethereum"
+                  />
+                  <p>Technologies actually used in the project.</p>
+                </div>
+
+                <div className="student-form-field">
+                  <label>GITHUB REPOSITORY</label>
+                  <div className="student-input-action">
+                    <input
+                      type="url"
+                      value={repository}
+                      onChange={(event) => {
+                        setRepository(event.target.value);
+                        setGithubEvidence(null);
+                        setRepositoryCommit("");
+                        setProof(null);
+                      }}
+                      placeholder="https://github.com/username/repository"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyRepository}
+                      disabled={githubLoading || !repository.trim() || !githubIdentity}
+                      className="student-secondary-button"
+                    >
+                      {githubLoading ? "Checking..." : "Verify GitHub"}
+                    </button>
+                  </div>
+                  {!githubIdentity && (
+                    <p style={{ marginTop: "10px" }}>
+                      Connect your GitHub account before verifying a project repository.
+                    </p>
+                  )}
+                  {githubEvidence && (
+                    <div className="student-inline-success" style={{ marginTop: "12px" }}>
+                      ✓ Repository verified
+                      <div style={{ marginTop: "8px" }}>
+                        <strong>Repository:</strong> {githubEvidence.fullName}
+                      </div>
+                      <div><strong>Branch:</strong> {githubEvidence.branch}</div>
+                      <div><strong>Verified commit:</strong> <code>{githubEvidence.commitSha}</code></div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {evidenceType === "COURSE" && (
+              <>
+                <div className="student-proof-field" style={{ marginTop: "8px" }}>
+                  <span>COURSE EVIDENCE</span>
+                  <strong>Record the learning outcome, not a generic project.</strong>
+                  <p>Provider, exact course, completion date and optional credential reference.</p>
+                </div>
+
+                <div className="student-form-grid">
+                  <div className="student-form-field">
+                    <label>COURSE PROVIDER / INSTITUTION</label>
+                    <input
+                      type="text"
+                      value={courseProvider}
+                      onChange={(event) => setCourseProvider(event.target.value)}
+                      placeholder="e.g. Microsoft, Coursera, IIT Delhi"
+                    />
+                  </div>
+                  <div className="student-form-field">
+                    <label>COURSE NAME</label>
+                    <input
+                      type="text"
+                      value={courseName}
+                      onChange={(event) => setCourseName(event.target.value)}
+                      placeholder="e.g. Blockchain Fundamentals"
+                    />
+                  </div>
+                </div>
+
+                <div className="student-form-grid">
+                  <div className="student-form-field">
+                    <label>COMPLETION DATE</label>
+                    <input
+                      type="date"
+                      value={courseCompletionDate}
+                      onChange={(event) => setCourseCompletionDate(event.target.value)}
+                    />
+                  </div>
+                  <div className="student-form-field">
+                    <label>CERTIFICATE / CREDENTIAL ID</label>
+                    <input
+                      type="text"
+                      value={courseCredentialId}
+                      onChange={(event) => setCourseCredentialId(event.target.value)}
+                      placeholder="Optional credential reference"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {evidenceType === "HACKATHON" && (
+              <>
+                <div className="student-proof-field" style={{ marginTop: "8px" }}>
+                  <span>HACKATHON EVIDENCE</span>
+                  <strong>Capture the event and result separately from project code.</strong>
+                  <p>Participation, event context and outcome are recorded here.</p>
+                </div>
+
+                <div className="student-form-grid">
+                  <div className="student-form-field">
+                    <label>HACKATHON NAME</label>
+                    <input
+                      type="text"
+                      value={hackathonName}
+                      onChange={(event) => setHackathonName(event.target.value)}
+                      placeholder="e.g. Microsoft Noida HackBriven"
+                    />
+                  </div>
+                  <div className="student-form-field">
+                    <label>ORGANIZER</label>
+                    <input
+                      type="text"
+                      value={hackathonOrganizer}
+                      onChange={(event) => setHackathonOrganizer(event.target.value)}
+                      placeholder="e.g. Microsoft"
+                    />
+                  </div>
+                </div>
+
+                <div className="student-form-grid">
+                  <div className="student-form-field">
+                    <label>EVENT DATE</label>
+                    <input
+                      type="date"
+                      value={hackathonDate}
+                      onChange={(event) => setHackathonDate(event.target.value)}
+                    />
+                  </div>
+                  <div className="student-form-field">
+                    <label>RESULT / PARTICIPATION</label>
+                    <select
+                      value={hackathonResult}
+                      onChange={(event) => setHackathonResult(event.target.value)}
+                    >
+                      <option value="">Select result</option>
+                      <option value="PARTICIPANT">Participant</option>
+                      <option value="FINALIST">Finalist</option>
+                      <option value="RUNNER_UP">Runner-up</option>
+                      <option value="WINNER">Winner</option>
+                      <option value="SPECIAL_RECOGNITION">Special Recognition</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="student-form-field">
+                  <label>TEAM SIZE</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={hackathonTeamSize}
+                    onChange={(event) => setHackathonTeamSize(event.target.value)}
+                    placeholder="e.g. 4"
+                  />
+                  <p>Optional. Leave empty if the event was individual.</p>
+                </div>
+              </>
+            )}
 
             <div className="student-form-grid">
 
