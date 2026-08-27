@@ -6973,3 +6973,423 @@ a {
     height: 195px;
   }
 }
+
+
+.student-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.student-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.student-content {
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-topbar {
+  min-height: 84px;
+  flex-shrink: 0;
+}
+
+.student-main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================================================
+   STUDENT LAYOUT FINAL FIX
+   Overrides legacy student layout rules
+   ========================================================= */
+
+.student-page {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  background: #070914;
+  color: #f5f7ff;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------
+   SIDEBAR
+   --------------------------------------------------------- */
+
+.student-sidebar {
+  position: sticky;
+  top: 0;
+  width: 300px;
+  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18,20,38,0.98),
+      rgba(8,10,22,0.98)
+    );
+}
+
+/* ---------------------------------------------------------
+   SIDEBAR WALLET
+   --------------------------------------------------------- */
+
+.student-sidebar-wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 16px;
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px;
+  background: rgba(255,255,255,0.025);
+}
+
+.student-wallet-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #aaa4ff;
+  background: rgba(105,95,255,0.13);
+  border: 1px solid rgba(126,117,255,0.25);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-wallet-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.student-wallet-info span,
+.student-wallet-info strong {
+  display: block;
+}
+
+.student-wallet-info span {
+  color: rgba(245,247,255,0.38);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.student-wallet-info strong {
+  margin-top: 4px;
+  color: #f5f7ff;
+  font-family: monospace;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-sidebar-connect {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(126,117,255,0.35);
+  border-radius: 10px;
+  background: rgba(105,95,255,0.10);
+  color: #f5f7ff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------
+   SIDEBAR FOOTER
+   --------------------------------------------------------- */
+
+.student-sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.student-change-role {
+  width: 100%;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.025);
+  color: rgba(245,247,255,0.55);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.student-change-role:hover {
+  color: #f5f7ff;
+  border-color: rgba(126,117,255,0.3);
+  background: rgba(105,95,255,0.08);
+}
+
+/* ---------------------------------------------------------
+   MAIN CONTENT AREA
+   --------------------------------------------------------- */
+
+.student-content {
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.student-topbar {
+  width: 100%;
+  min-width: 0;
+  min-height: 84px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 34px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: rgba(7,9,20,0.88);
+  backdrop-filter: blur(18px);
+}
+
+.student-breadcrumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-topbar-right {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  flex-shrink: 1;
+}
+
+.student-network-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(245,247,255,0.65);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.student-network-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #68e2a0;
+  box-shadow: 0 0 10px rgba(104,226,160,0.45);
+}
+
+.student-topbar-wallet {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.025);
+}
+
+.student-topbar-avatar {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #aaa4ff;
+  background: rgba(105,95,255,0.13);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.student-topbar-wallet > div:last-child {
+  min-width: 0;
+}
+
+.student-topbar-wallet strong,
+.student-topbar-wallet span {
+  display: block;
+}
+
+.student-topbar-wallet strong {
+  color: #f5f7ff;
+  font-family: monospace;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-topbar-wallet span {
+  margin-top: 2px;
+  color: #68e2a0;
+  font-size: 8px;
+}
+
+/* ---------------------------------------------------------
+   PAGE CONTENT
+   --------------------------------------------------------- */
+
+.student-main-content {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  box-sizing: border-box;
+  padding: 30px 34px 50px;
+  overflow-x: hidden;
+}
+
+/* Prevent cards/grids from forcing page width */
+
+.student-panel,
+.student-stat-grid,
+.student-credential-grid,
+.student-page-header {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.student-credential-grid {
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-credential-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.student-credential-card code,
+.student-credential-card strong,
+.student-credential-card p,
+.student-proof-field code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .student-page {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .student-sidebar {
+    width: 260px;
+  }
+
+  .student-main-content {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .student-credential-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .student-page {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .student-sidebar {
+    width: 220px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .student-topbar {
+    padding: 0 20px;
+  }
+
+  .student-network-status {
+    display: none;
+  }
+
+  .student-main-content {
+    padding: 28px 20px 45px;
+  }
+}
+
+@media (max-width: 620px) {
+  .student-page {
+    display: block;
+  }
+
+  .student-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+  }
+
+  .student-sidebar-footer {
+    margin-top: 18px;
+  }
+
+  .student-content {
+    width: 100%;
+  }
+
+  .student-topbar {
+    position: static;
+    min-height: 70px;
+  }
+
+  .student-topbar-wallet {
+    display: none;
+  }
+
+  .student-main-content {
+    padding: 24px 16px 40px;
+  }
+
+  .student-stat-grid,
+  .student-credential-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

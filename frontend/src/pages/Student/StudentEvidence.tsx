@@ -399,7 +399,7 @@ export default function StudentEvidence() {
       <section className="student-page-header">
         <div>
           <span className="student-page-eyebrow">
-            ACHIEVEMENT EVIDENCE
+            CRYPTOGRAPHIC EVIDENCE
           </span>
 
           <h1>
@@ -571,9 +571,8 @@ export default function StudentEvidence() {
                 </h3>
 
                 <p>
-                  Create your first project,
-                  course, assessment or achievement
-                  evidence.
+                 Create your first project, course,
+assessment, hackathon or other evidence record.
                 </p>
 
                 <Link

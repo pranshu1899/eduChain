@@ -29,10 +29,18 @@ import StudentCredentialDetails from "./pages/Student/StudentCredentialDetails";
 import StudentEvidence from "./pages/Student/StudentEvidence";
 
 /* =====================================================
-   PHASE 1 - EVIDENCE FOUNDATION
+   EVIDENCE
    ===================================================== */
 
 import EvidenceTest from "./pages/Student/EvidenceTest";
+
+/* =====================================================
+   ACHIEVEMENTS
+   ===================================================== */
+
+import StudentAchievements from "./pages/Student/StudentAchievements";
+import StudentAchievementCreate from "./pages/Student/StudentAchievementCreate";
+import StudentAchievementDetails from "./pages/Student/StudentAchievementDetails";
 
 /* =====================================================
    PUBLIC VERIFIER
@@ -45,6 +53,12 @@ import VerifierPage from "./pages/Verifier/VerifierPage";
    ===================================================== */
 
 import RequestIssuer from "./pages/RequestIssuer";
+
+/* =====================================================
+   HACKATHON ORGANIZATION
+   ===================================================== */
+
+import RequestHackathon from "./pages/RequestHackathon/RequestHackathon";
 
 /* =====================================================
    ADMIN
@@ -91,12 +105,17 @@ function LandingPage() {
         </div>
 
         <h1>
-          Choose your <span>EduProof</span> role
+          Choose your{" "}
+          <span>
+            EduProof
+          </span>{" "}
+          role
         </h1>
 
         <p className="landing-description">
-          Select the interface that matches what you want
-          to do. Each role has its own focused workspace.
+          Select the interface that matches
+          what you want to do. Each role has
+          its own focused workspace.
         </p>
 
         <div className="role-grid">
@@ -121,8 +140,9 @@ function LandingPage() {
             </h2>
 
             <p>
-              Issue, manage, update and verify academic
-              credentials on the blockchain.
+              Issue, manage, update and verify
+              academic credentials on the
+              blockchain.
             </p>
 
             <div className="role-action">
@@ -154,8 +174,8 @@ function LandingPage() {
             </h2>
 
             <p>
-              View your credentials, versions, status and
-              blockchain proof.
+              View your credentials, evidence,
+              achievements and blockchain proof.
             </p>
 
             <div className="role-action">
@@ -187,8 +207,9 @@ function LandingPage() {
             </h2>
 
             <p>
-              Verify academic credentials without needing
-              a university wallet.
+              Verify academic credentials
+              without needing a university
+              wallet.
             </p>
 
             <div className="role-action">
@@ -200,7 +221,7 @@ function LandingPage() {
           </Link>
 
           {/* =================================================
-              ISSUER APPLICATION
+              UNIVERSITY ISSUER APPLICATION
               ================================================= */}
 
           <Link
@@ -220,9 +241,44 @@ function LandingPage() {
             </h2>
 
             <p>
-              Apply for university issuer authorization.
-              Approval is required before credentials can
-              be issued.
+              Apply for university issuer
+              authorization. Approval is required
+              before credentials can be issued.
+            </p>
+
+            <div className="role-action">
+              Apply for Authorization
+              <span>
+                →
+              </span>
+            </div>
+          </Link>
+
+          {/* =================================================
+              HACKATHON ORGANIZATION
+              ================================================= */}
+
+          <Link
+            to="/request-hackathon"
+            className="role-card student"
+          >
+            <div className="role-icon">
+              🏆
+            </div>
+
+            <div className="role-label">
+              HACKATHON NETWORK
+            </div>
+
+            <h2>
+              Become a Hackathon Organization
+            </h2>
+
+            <p>
+              Apply to issue batch-verified
+              hackathon certificates using
+              EduProof's cryptographic
+              infrastructure.
             </p>
 
             <div className="role-action">
@@ -254,8 +310,9 @@ function LandingPage() {
             </h2>
 
             <p>
-              Review issuer applications and authorize
-              trusted institutions to issue credentials.
+              Review issuer and hackathon
+              organization applications and
+              authorize trusted institutions.
             </p>
 
             <div className="role-action">
@@ -285,16 +342,31 @@ function App() {
 
         <Route
           path="/"
-          element={<LandingPage />}
+          element={
+            <LandingPage />
+          }
         />
 
         {/* =================================================
-            ISSUER APPLICATION
+            UNIVERSITY ISSUER APPLICATION
             ================================================= */}
 
         <Route
           path="/request-issuer"
-          element={<RequestIssuer />}
+          element={
+            <RequestIssuer />
+          }
+        />
+
+        {/* =================================================
+            HACKATHON ORGANIZATION APPLICATION
+            ================================================= */}
+
+        <Route
+          path="/request-hackathon"
+          element={
+            <RequestHackathon />
+          }
         />
 
         {/* =================================================
@@ -303,7 +375,9 @@ function App() {
 
         <Route
           path="/admin"
-          element={<AdminDashboard />}
+          element={
+            <AdminDashboard />
+          }
         />
 
         {/* =================================================
@@ -312,42 +386,58 @@ function App() {
 
         <Route
           path="/university"
-          element={<UniversityDashboard />}
+          element={
+            <UniversityDashboard />
+          }
         />
 
         <Route
           path="/university/issue"
-          element={<IssueCredential />}
+          element={
+            <IssueCredential />
+          }
         />
 
         <Route
           path="/university/credentials"
-          element={<UniversityCredentials />}
+          element={
+            <UniversityCredentials />
+          }
         />
 
         <Route
           path="/university/credentials/:id"
-          element={<UniversityCredentialDetails />}
+          element={
+            <UniversityCredentialDetails />
+          }
         />
 
         <Route
           path="/university/verify"
-          element={<UniversityVerify />}
+          element={
+            <UniversityVerify />
+          }
         />
 
         <Route
           path="/university/revoke/:id"
-          element={<UniversityRevokeCredential />}
+          element={
+            <UniversityRevokeCredential />
+          }
         />
 
         <Route
           path="/university/analytics"
-          element={<UniversityAnalytics />}
+          element={
+            <UniversityAnalytics />
+          }
         />
 
         <Route
           path="/university/*"
-          element={<UniversityDashboard />}
+          element={
+            <UniversityDashboard />
+          }
         />
 
         {/* =================================================
@@ -356,17 +446,23 @@ function App() {
 
         <Route
           path="/student"
-          element={<StudentDashboard />}
+          element={
+            <StudentDashboard />
+          }
         />
 
         <Route
           path="/student/credentials"
-          element={<StudentDashboard />}
+          element={
+            <StudentDashboard />
+          }
         />
 
         <Route
           path="/student/credentials/:id"
-          element={<StudentCredentialDetails />}
+          element={
+            <StudentCredentialDetails />
+          }
         />
 
         {/* =================================================
@@ -375,21 +471,56 @@ function App() {
 
         <Route
           path="/student/evidence"
-          element={<StudentEvidence />}
+          element={
+            <StudentEvidence />
+          }
         />
 
         {/* =================================================
-            EVIDENCE TEST
+            EVIDENCE CREATION
             ================================================= */}
 
         <Route
           path="/student/evidence-test"
-          element={<EvidenceTest />}
+          element={
+            <EvidenceTest />
+          }
+        />
+
+        {/* =================================================
+            ACHIEVEMENTS
+            ================================================= */}
+
+        <Route
+          path="/student/achievements"
+          element={
+            <StudentAchievements />
+          }
         />
 
         <Route
+          path="/student/achievements/create"
+          element={
+            <StudentAchievementCreate />
+          }
+        />
+
+        <Route
+          path="/student/achievements/:id"
+          element={
+            <StudentAchievementDetails />
+          }
+        />
+
+        {/* =================================================
+            STUDENT FALLBACK
+            ================================================= */}
+
+        <Route
           path="/student/*"
-          element={<StudentDashboard />}
+          element={
+            <StudentDashboard />
+          }
         />
 
         {/* =================================================
@@ -398,17 +529,23 @@ function App() {
 
         <Route
           path="/verify"
-          element={<VerifierPage />}
+          element={
+            <VerifierPage />
+          }
         />
 
         <Route
           path="/verify/:id"
-          element={<VerifierPage />}
+          element={
+            <VerifierPage />
+          }
         />
 
         <Route
           path="/verify/*"
-          element={<VerifierPage />}
+          element={
+            <VerifierPage />
+          }
         />
 
         {/* =================================================

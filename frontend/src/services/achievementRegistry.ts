@@ -33,8 +33,7 @@ export const ACHIEVEMENT_REGISTRY_ABI = [
    NETWORK
    ===================================================== */
 
-export const SEPOLIA_CHAIN_ID =
-  11155111n;
+export const SEPOLIA_CHAIN_ID = 11155111n;
 
 const SEPOLIA_RPC_URL =
   "https://ethereum-sepolia-rpc.publicnode.com";
@@ -54,26 +53,53 @@ export type AchievementBlockchainStatus =
 
 export interface AchievementBlockchainRecord {
   exists: boolean;
+  achievementId: string;
+  merkleRoot: string;
+  owner: string;
+  anchoredAt: number;
+  status: AchievementBlockchainStatus;
+  statusCode: number;
+}
+
+/* =====================================================
+   INTEGRITY RESULT
+   ===================================================== */
+
+export interface AchievementIntegrityResult {
+  verified: boolean;
+
+  exists: boolean;
+
+  active: boolean;
+
+  ownerMatches: boolean;
+
+  merkleRootMatches: boolean;
+
+  blockchainExists: boolean;
+
+  blockchainActive: boolean;
 
   achievementId: string;
 
-  merkleRoot: string;
-
   owner: string;
+
+  localMerkleRoot: string;
+
+  onChainMerkleRoot: string;
 
   anchoredAt: number;
 
   status: AchievementBlockchainStatus;
 
-  statusCode: number;
+  reason: string;
 }
 
 /* =====================================================
    READ-ONLY PROVIDER
    ===================================================== */
 
-function getReadOnlyProvider():
-  ethers.JsonRpcProvider {
+function getReadOnlyProvider(): ethers.JsonRpcProvider {
   return new ethers.JsonRpcProvider(
     SEPOLIA_RPC_URL,
   );
@@ -83,10 +109,8 @@ function getReadOnlyProvider():
    METAMASK PROVIDER
    ===================================================== */
 
-function getEthereum():
-  ethers.Eip1193Provider {
-  const ethereum =
-    window.ethereum;
+function getEthereum(): ethers.Eip1193Provider {
+  const ethereum = window.ethereum;
 
   if (!ethereum) {
     throw new Error(
@@ -101,8 +125,7 @@ function getEthereum():
    BROWSER PROVIDER
    ===================================================== */
 
-async function getBrowserProvider():
-  Promise<ethers.BrowserProvider> {
+async function getBrowserProvider(): Promise<ethers.BrowserProvider> {
   return new ethers.BrowserProvider(
     getEthereum(),
   );
@@ -134,8 +157,7 @@ async function ensureSepolia(
    READ-ONLY CONTRACT
    ===================================================== */
 
-function getReadOnlyContract():
-  ethers.Contract {
+function getReadOnlyContract(): ethers.Contract {
   const provider =
     getReadOnlyProvider();
 
@@ -150,8 +172,7 @@ function getReadOnlyContract():
    WALLET CONTRACT
    ===================================================== */
 
-async function getWalletContract():
-  Promise<ethers.Contract> {
+async function getWalletContract(): Promise<ethers.Contract> {
   const provider =
     await getBrowserProvider();
 
@@ -219,16 +240,21 @@ export function createAchievementId(
   }
 
   const normalizedHashes =
-    evidenceHashes
-      .map((hash) => {
+    evidenceHashes.map(
+      (hash) => {
         validateBytes32(
           hash,
           "Evidence hash",
         );
 
         return hash.toLowerCase();
-      })
-      .sort();
+      },
+    );
+
+  const uniqueHashes =
+    Array.from(
+      new Set(normalizedHashes),
+    ).sort();
 
   return ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
@@ -240,7 +266,7 @@ export function createAchievementId(
       [
         "EDUPROOF_ACHIEVEMENT",
         owner,
-        normalizedHashes,
+        uniqueHashes,
       ],
     ),
   );
@@ -488,6 +514,169 @@ export async function verifyAchievementProofOnChain(
       expectedOwner,
     ),
   );
+}
+
+/* =====================================================
+   FULL ACHIEVEMENT INTEGRITY VERIFICATION
+   ===================================================== */
+
+export async function verifyAchievementIntegrity(
+  achievementId: string,
+  expectedOwner: string,
+  localMerkleRoot: string,
+): Promise<AchievementIntegrityResult> {
+  validateBytes32(
+    achievementId,
+    "Achievement ID",
+  );
+
+  validateBytes32(
+    localMerkleRoot,
+    "Merkle root",
+  );
+
+  if (
+    !ethers.isAddress(
+      expectedOwner,
+    )
+  ) {
+    return {
+      verified: false,
+      exists: false,
+      active: false,
+      ownerMatches: false,
+      merkleRootMatches: false,
+      blockchainExists: false,
+      blockchainActive: false,
+      achievementId,
+      owner: "",
+      localMerkleRoot,
+      onChainMerkleRoot: "",
+      anchoredAt: 0,
+      status: "NONE",
+      reason:
+        "Expected owner is not a valid Ethereum address.",
+    };
+  }
+
+  try {
+    const record =
+      await verifyAchievement(
+        achievementId,
+      );
+
+    const blockchainExists =
+      record.exists;
+
+    const blockchainActive =
+      record.status ===
+      "ANCHORED";
+
+    const ownerMatches =
+      blockchainExists &&
+      record.owner.toLowerCase() ===
+        expectedOwner.toLowerCase();
+
+    const merkleRootMatches =
+      blockchainExists &&
+      record.merkleRoot.toLowerCase() ===
+        localMerkleRoot.toLowerCase();
+
+    const verified =
+      blockchainExists &&
+      blockchainActive &&
+      ownerMatches &&
+      merkleRootMatches;
+
+    let reason =
+      "Achievement verification failed.";
+
+    if (verified) {
+      reason =
+        "Achievement exists on Ethereum Sepolia, is active, belongs to the expected owner, and its Merkle root matches.";
+    } else if (!blockchainExists) {
+      reason =
+        "Achievement is not anchored on Ethereum Sepolia.";
+    } else if (!blockchainActive) {
+      reason =
+        "Achievement exists on-chain but has been revoked.";
+    } else if (!ownerMatches) {
+      reason =
+        "Achievement owner does not match the expected owner.";
+    } else if (!merkleRootMatches) {
+      reason =
+        "Achievement Merkle root does not match the blockchain anchor.";
+    }
+
+    return {
+      verified,
+
+      exists:
+        blockchainExists,
+
+      active:
+        blockchainActive,
+
+      ownerMatches,
+
+      merkleRootMatches,
+
+      blockchainExists,
+
+      blockchainActive,
+
+      achievementId,
+
+      owner:
+        record.owner,
+
+      localMerkleRoot,
+
+      onChainMerkleRoot:
+        record.merkleRoot,
+
+      anchoredAt:
+        record.anchoredAt,
+
+      status:
+        record.status,
+
+      reason,
+    };
+  } catch (error) {
+    return {
+      verified: false,
+
+      exists: false,
+
+      active: false,
+
+      ownerMatches: false,
+
+      merkleRootMatches: false,
+
+      blockchainExists: false,
+
+      blockchainActive: false,
+
+      achievementId,
+
+      owner: "",
+
+      localMerkleRoot,
+
+      onChainMerkleRoot: "",
+
+      anchoredAt: 0,
+
+      status: "NONE",
+
+      reason:
+        error instanceof Error
+          ? error.message
+          : "Unable to verify achievement on-chain.",
+    };
+  }
 }
 
 /* =====================================================
