@@ -55,10 +55,16 @@ import VerifierPage from "./pages/Verifier/VerifierPage";
 import RequestIssuer from "./pages/RequestIssuer";
 
 /* =====================================================
-   HACKATHON ORGANIZATION
+   HACKATHON ORGANIZATION APPLICATION
    ===================================================== */
 
 import RequestHackathon from "./pages/RequestHackathon/RequestHackathon";
+
+/* =====================================================
+   HACKATHON ORGANIZATION PORTAL
+   ===================================================== */
+
+import HackathonDashboard from "./pages/Hackathon/HackathonDashboard";
 
 /* =====================================================
    ADMIN
@@ -255,7 +261,7 @@ function LandingPage() {
           </Link>
 
           {/* =================================================
-              HACKATHON ORGANIZATION
+              HACKATHON ORGANIZATION APPLICATION
               ================================================= */}
 
           <Link
@@ -520,6 +526,17 @@ function App() {
           path="/student/*"
           element={
             <StudentDashboard />
+          }
+        />
+
+        {/* =================================================
+            HACKATHON ORGANIZATION PORTAL
+            ================================================= */}
+
+        <Route
+          path="/hackathon"
+          element={
+            <HackathonDashboard />
           }
         />
 
