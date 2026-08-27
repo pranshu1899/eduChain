@@ -65,6 +65,8 @@ import RequestHackathon from "./pages/RequestHackathon/RequestHackathon";
    ===================================================== */
 
 import HackathonDashboard from "./pages/Hackathon/HackathonDashboard";
+import HackathonCreateEvent from "./pages/Hackathon/HackathonCreateEvent";
+import HackathonParticipants from "./pages/Hackathon/HackathonParticipants";
 
 /* =====================================================
    ADMIN
@@ -342,6 +344,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* =================================================
             LANDING
             ================================================= */}
@@ -540,6 +543,20 @@ function App() {
           }
         />
 
+        <Route
+          path="/hackathon/create"
+          element={
+            <HackathonCreateEvent />
+          }
+        />
+
+        <Route
+          path="/hackathon/:id/participants"
+          element={
+            <HackathonParticipants />
+          }
+        />
+
         {/* =================================================
             PUBLIC VERIFIER
             ================================================= */}
@@ -578,6 +595,7 @@ function App() {
             />
           }
         />
+
       </Routes>
     </BrowserRouter>
   );
