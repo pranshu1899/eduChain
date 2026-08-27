@@ -1,9 +1,13 @@
+import { ethers } from "ethers";
+
 import type {
   AchievementCriterion,
   AchievementCriterionResult,
+  AchievementEvidenceVerification,
   AchievementInput,
   AchievementProof,
   AchievementStatus,
+  AchievementVerificationResult,
   EvidenceGraph,
   AchievementEvidenceNode,
   StoredAchievement,
@@ -14,24 +18,31 @@ import type {
 } from "../types/evidence";
 
 import {
+  getStoredEvidence,
   getStoredEvidenceById,
 } from "./evidenceService";
 
 import {
   buildMerkleTree,
   createMerkleProof,
+  getMerkleRoot,
   verifyEvidenceMerkleProof,
-  verifyMerkleTree,
+  verifyMerkleProof,
 } from "../utils/merkle";
 
 import {
+  verifyEvidenceIntegrity,
+} from "./evidenceRegistry";
+
+import {
   anchorAchievement,
-  createAchievementId,
-  verifyAchievement,
-  verifyAchievementMerkleRoot,
-  verifyAchievementOwner,
-  type AchievementBlockchainRecord,
+  verifyAchievementIntegrity,
+  revokeAchievementOnChain,
 } from "./achievementRegistry";
+
+/* =====================================================
+   STORAGE
+   ===================================================== */
 
 const STORAGE_KEY =
   "eduproof:achievements:v1";
@@ -56,7 +67,7 @@ function normalizeLower(
 }
 
 /* =====================================================
-   READ LOCAL ACHIEVEMENTS
+   READ ACHIEVEMENTS
    ===================================================== */
 
 function readAchievements():
@@ -90,7 +101,7 @@ function readAchievements():
 }
 
 /* =====================================================
-   WRITE LOCAL ACHIEVEMENTS
+   WRITE ACHIEVEMENTS
    ===================================================== */
 
 function writeAchievements(
@@ -136,15 +147,13 @@ export function getAchievementsByOwner(
   owner: string,
 ): StoredAchievement[] {
   const normalizedOwner =
-    owner
-      .trim()
-      .toLowerCase();
+    normalizeLower(owner);
 
   return readAchievements().filter(
     (item) =>
-      item.achievement.owner
-        .toLowerCase() ===
-      normalizedOwner,
+      normalizeLower(
+        item.achievement.owner,
+      ) === normalizedOwner,
   );
 }
 
@@ -178,9 +187,16 @@ export function clearStoredAchievements():
 }
 
 /* =====================================================
-   LOAD EVIDENCE
+   LOAD ACHIEVEMENT EVIDENCE
    ===================================================== */
 
+/**
+ * Existing pages call this with evidenceIds.
+ *
+ * Keep the API exactly as:
+ *
+ * getAchievementEvidence(string[])
+ */
 export function getAchievementEvidence(
   evidenceIds: string[],
 ): StoredEvidence[] {
@@ -226,7 +242,9 @@ function evaluateCriterion(
       return {
         criterion,
         passed,
-        actualValue: actual,
+        actualValue:
+          actual,
+
         explanation: passed
           ? `${actual} evidence record(s) satisfy the minimum of ${minimum}.`
           : `Only ${actual} evidence record(s) found. At least ${minimum} required.`,
@@ -261,7 +279,9 @@ function evaluateCriterion(
       return {
         criterion,
         passed: matching,
-        actualValue: matching,
+        actualValue:
+          matching,
+
         explanation: matching
           ? `Required ${requiredType} evidence is present.`
           : `No ${requiredType} evidence was found.`,
@@ -304,8 +324,11 @@ function evaluateCriterion(
 
       return {
         criterion,
-        passed: hasSkill,
-        actualValue: hasSkill,
+        passed:
+          hasSkill,
+        actualValue:
+          hasSkill,
+
         explanation: hasSkill
           ? `Required skill "${criterion.skill}" is demonstrated by the evidence.`
           : `Required skill "${criterion.skill}" was not found in the evidence.`,
@@ -330,10 +353,13 @@ function evaluateCriterion(
 
       return {
         criterion,
+
         passed:
           hasGitHubEvidence,
+
         actualValue:
           hasGitHubEvidence,
+
         explanation:
           hasGitHubEvidence
             ? "GitHub repository evidence with a specific commit is present."
@@ -361,9 +387,12 @@ function evaluateCriterion(
 
       return {
         criterion,
+
         passed,
+
         actualValue:
           verifiedCount,
+
         explanation: passed
           ? `${verifiedCount} cryptographically verified evidence record(s) found.`
           : "No anchored evidence with a verified owner signature was found.",
@@ -399,7 +428,7 @@ export function evaluateAchievementCriteria(
 }
 
 /* =====================================================
-   BUILD ACHIEVEMENT
+   CREATE ACHIEVEMENT PROOF
    ===================================================== */
 
 export function createAchievementProof(
@@ -521,54 +550,33 @@ export function createAchievementProof(
 
     status,
 
-    createdAt: now,
+    createdAt:
+      now,
 
-    updatedAt: now,
+    updatedAt:
+      now,
   };
 }
 
 /* =====================================================
-   BACKWARD COMPATIBILITY
-   ===================================================== */
-
-/*
- * EvidenceTest.tsx currently imports createAchievement.
- *
- * Keep createAchievement as the public API while using
- * createAchievementProof internally.
- */
-// export function createAchievement(
-//   input: AchievementInput,
-//   evidenceIds: string[],
-// ): AchievementProof {
-//   return createAchievementProof(
-//     input,
-//     evidenceIds,
-//   );
-// }
-
-/* =====================================================
-   LEGACY / UI COMPATIBILITY
+   CREATE + SAVE ACHIEVEMENT
    ===================================================== */
 
 /**
- * Creates and stores an achievement in one operation.
+ * Compatibility function.
  *
- * EvidenceTest.tsx uses this convenience API:
+ * Existing EvidenceTest.tsx calls:
  *
  * createAchievement(
  *   input,
  *   evidenceIds,
  *   evidenceHashes,
- *   criterionResults
+ *   achievementResults
  * )
  *
- * The newer architecture does not need callers to provide
- * evidenceHashes or criterionResults because both values
- * are derived from the selected evidence and criteria.
- *
- * The extra arguments are therefore accepted for backward
- * compatibility but deliberately ignored.
+ * The last two arguments are accepted so the existing
+ * UI does not break. The service derives the canonical
+ * values itself from local evidence.
  */
 export function createAchievement(
   input: AchievementInput,
@@ -594,11 +602,9 @@ export function createAchievement(
 export function saveAchievement(
   proof: AchievementProof,
 ): StoredAchievement {
-  const evidenceHashes =
-    proof.evidenceHashes;
-
   if (
-    evidenceHashes.length === 0
+    proof.evidenceHashes.length ===
+    0
   ) {
     throw new Error(
       "Cannot save an achievement without evidence.",
@@ -607,13 +613,13 @@ export function saveAchievement(
 
   const merkleRoot =
     buildMerkleTree(
-      evidenceHashes,
+      proof.evidenceHashes,
     ).root;
 
   const id =
-    createAchievementId(
+    generateAchievementId(
       proof.achievement.owner,
-      evidenceHashes,
+      proof.evidenceHashes,
     );
 
   const stored:
@@ -642,7 +648,14 @@ export function saveAchievement(
   ) {
     existing[
       existingIndex
-    ] = stored;
+    ] = {
+      ...stored,
+
+      createdAt:
+        existing[
+          existingIndex
+        ].createdAt,
+    };
   } else {
     existing.unshift(
       stored,
@@ -657,7 +670,7 @@ export function saveAchievement(
 }
 
 /* =====================================================
-   UPDATE ACHIEVEMENT
+   UPDATE
    ===================================================== */
 
 export function updateStoredAchievement(
@@ -669,6 +682,7 @@ export function updateStoredAchievement(
   const updated:
     StoredAchievement = {
     ...achievement,
+
     updatedAt:
       Date.now(),
   };
@@ -697,12 +711,45 @@ export function updateStoredAchievement(
 }
 
 /* =====================================================
+   GENERATE ACHIEVEMENT ID
+   ===================================================== */
+
+export function generateAchievementId(
+  owner: string,
+  evidenceHashes: string[],
+): string {
+  const normalizedOwner =
+    normalizeLower(owner);
+
+  const normalizedHashes =
+    Array.from(
+      new Set(
+        evidenceHashes.map(
+          (hash) =>
+            hash.toLowerCase(),
+        ),
+      ),
+    ).sort();
+
+  const payload =
+    JSON.stringify([
+      normalizedOwner,
+      normalizedHashes,
+    ]);
+
+  return ethers.keccak256(
+    ethers.toUtf8Bytes(
+      payload,
+    ),
+  );
+}
+
+/* =====================================================
    BUILD EVIDENCE GRAPH
    ===================================================== */
 
 export function buildEvidenceGraph(
-  achievement:
-    StoredAchievement,
+  achievement: StoredAchievement,
 ): EvidenceGraph {
   const evidence =
     getAchievementEvidence(
@@ -746,20 +793,6 @@ export function buildEvidenceGraph(
       }),
     );
 
-  const verifiedEvidence =
-    nodes.filter(
-      (node) =>
-        node.status ===
-        "ANCHORED",
-    ).length;
-
-  const revokedEvidence =
-    nodes.filter(
-      (node) =>
-        node.status ===
-        "REVOKED",
-    ).length;
-
   const skills =
     Array.from(
       new Set(
@@ -775,8 +808,7 @@ export function buildEvidenceGraph(
       achievement.id,
 
     owner:
-      achievement.achievement
-        .owner,
+      achievement.achievement.owner,
 
     nodes,
 
@@ -789,21 +821,63 @@ export function buildEvidenceGraph(
     totalEvidence:
       nodes.length,
 
-    verifiedEvidence,
+    verifiedEvidence:
+      nodes.filter(
+        (node) =>
+          node.status ===
+          "ANCHORED",
+      ).length,
 
-    revokedEvidence,
+    revokedEvidence:
+      nodes.filter(
+        (node) =>
+          node.status ===
+          "REVOKED",
+      ).length,
 
     skills,
   };
 }
 
 /* =====================================================
-   MERKLE PROOF FOR EVIDENCE
+   MERKLE TREE
    ===================================================== */
 
-export function getAchievementEvidenceProof(
-  achievement:
-    StoredAchievement,
+export function buildAchievementMerkleTree(
+  achievement: StoredAchievement,
+) {
+  if (
+    achievement.evidenceHashes.length ===
+    0
+  ) {
+    throw new Error(
+      "Cannot build achievement Merkle tree without evidence.",
+    );
+  }
+
+  return buildMerkleTree(
+    achievement.evidenceHashes,
+  );
+}
+
+/* =====================================================
+   MERKLE ROOT
+   ===================================================== */
+
+export function calculateAchievementMerkleRoot(
+  achievement: StoredAchievement,
+): string {
+  return getMerkleRoot(
+    achievement.evidenceHashes,
+  );
+}
+
+/* =====================================================
+   MERKLE PROOF
+   ===================================================== */
+
+export function createAchievementMerkleProof(
+  achievement: StoredAchievement,
   evidenceHash: string,
 ) {
   return createMerkleProof(
@@ -813,60 +887,536 @@ export function getAchievementEvidenceProof(
 }
 
 /* =====================================================
-   VERIFY LOCAL MERKLE TREE
+   GET EVIDENCE PROOF
+   ===================================================== */
+
+export function getAchievementEvidenceProof(
+  achievementOrId:
+    | StoredAchievement
+    | string,
+  evidenceHash: string,
+) {
+  const achievement =
+    typeof achievementOrId ===
+    "string"
+      ? getStoredAchievementById(
+          achievementOrId,
+        )
+      : achievementOrId;
+
+  if (!achievement) {
+    throw new Error(
+      "Achievement was not found.",
+    );
+  }
+
+  return createAchievementMerkleProof(
+    achievement,
+    evidenceHash,
+  );
+}
+
+/* =====================================================
+   VERIFY MERKLE PROOF
+   ===================================================== */
+
+export function verifyAchievementMerkleProof(
+  achievement: StoredAchievement,
+  evidenceHash: string,
+): boolean {
+  try {
+    const proof =
+      createAchievementMerkleProof(
+        achievement,
+        evidenceHash,
+      );
+
+    return verifyEvidenceMerkleProof(
+      evidenceHash,
+      proof,
+    );
+  } catch {
+    return false;
+  }
+}
+
+/* =====================================================
+   VERIFY MERKLE TREE
    ===================================================== */
 
 export function verifyAchievementMerkleTree(
-  achievement:
-    StoredAchievement,
+  achievement: StoredAchievement,
 ): boolean {
-  if (
-    !achievement.merkleRoot
-  ) {
+  try {
+    if (
+      achievement.evidenceHashes.length ===
+      0
+    ) {
+      return false;
+    }
+
+    const calculatedRoot =
+      getMerkleRoot(
+        achievement.evidenceHashes,
+      );
+
+    if (
+      !achievement.merkleRoot
+    ) {
+      return true;
+    }
+
+    return (
+      calculatedRoot.toLowerCase() ===
+      achievement.merkleRoot.toLowerCase()
+    );
+  } catch {
     return false;
   }
-
-  return verifyMerkleTree(
-    achievement.evidenceHashes,
-    achievement.merkleRoot,
-  );
 }
 
 /* =====================================================
-   VERIFY ONE EVIDENCE
+   VERIFY LOCAL ACHIEVEMENT
    ===================================================== */
 
-export function verifyAchievementEvidence(
-  achievement:
-    StoredAchievement,
-  evidenceHash: string,
+export function verifyLocalAchievement(
+  achievement: StoredAchievement,
 ): boolean {
-  if (
-    !achievement.merkleRoot
-  ) {
-    return false;
-  }
-
-  const proof =
-    createMerkleProof(
-      achievement.evidenceHashes,
-      evidenceHash,
-    );
-
-  return verifyEvidenceMerkleProof(
-    evidenceHash,
-    proof,
+  return verifyAchievementMerkleTree(
+    achievement,
   );
 }
 
 /* =====================================================
-   ANCHOR
+   VERIFY ACHIEVEMENT EVIDENCE
+   ===================================================== */
+
+export async function verifyAchievementEvidence(
+  achievement: StoredAchievement,
+  evidenceId: string,
+): Promise<AchievementEvidenceVerification> {
+  const evidence =
+    getStoredEvidence().find(
+      (item) =>
+        item.id ===
+        evidenceId,
+    );
+
+  if (!evidence) {
+    return {
+      evidenceId,
+
+      evidenceHash: "",
+
+      verified: false,
+
+      existsLocally: false,
+
+      onChainExists: false,
+
+      onChainActive: false,
+
+      hashValid: false,
+
+      signatureValid: false,
+
+      ownerMatches: false,
+
+      merkleProofValid: false,
+
+      reason:
+        "Evidence does not exist in local storage.",
+    };
+  }
+
+  const evidenceHash =
+    evidence.evidenceHash;
+
+  const hashValid =
+    ethers.isHexString(
+      evidenceHash,
+      32,
+    );
+
+  const ownerMatches =
+    normalizeLower(
+      evidence.evidence.owner,
+    ) ===
+    normalizeLower(
+      achievement.achievement.owner,
+    );
+
+  const signatureValid =
+    Boolean(
+      evidence.signature &&
+      evidence.ownerVerified,
+    );
+
+  let onChainExists =
+    false;
+
+  let onChainActive =
+    false;
+
+  let blockchainReason =
+    "";
+
+  try {
+    const result =
+      await verifyEvidenceIntegrity(
+        evidenceHash,
+        achievement.achievement.owner,
+      );
+
+    onChainExists =
+      result.exists;
+
+    onChainActive =
+      result.active;
+
+    blockchainReason =
+      result.reason;
+  } catch (error) {
+    blockchainReason =
+      error instanceof Error
+        ? error.message
+        : "Unable to verify evidence on-chain.";
+  }
+
+  let merkleProofValid =
+    false;
+
+  try {
+    const proof =
+      createAchievementMerkleProof(
+        achievement,
+        evidenceHash,
+      );
+
+    merkleProofValid =
+      verifyMerkleProof(
+        proof,
+      );
+  } catch {
+    merkleProofValid =
+      false;
+  }
+
+  const verified =
+    hashValid &&
+    ownerMatches &&
+    signatureValid &&
+    merkleProofValid &&
+    onChainExists &&
+    onChainActive;
+
+  let reason =
+    "Evidence verification failed.";
+
+  if (verified) {
+    reason =
+      "Evidence is locally valid, owner-matched, included in the achievement Merkle tree, and active on-chain.";
+  } else if (!hashValid) {
+    reason =
+      "Evidence hash is invalid.";
+  } else if (!ownerMatches) {
+    reason =
+      "Evidence owner does not match the achievement owner.";
+  } else if (!signatureValid) {
+    reason =
+      "Evidence signature is missing or invalid.";
+  } else if (!merkleProofValid) {
+    reason =
+      "Evidence is not proven to belong to the achievement Merkle tree.";
+  } else if (!onChainExists) {
+    reason =
+      blockchainReason ||
+      "Evidence is not anchored on-chain.";
+  } else if (!onChainActive) {
+    reason =
+      blockchainReason ||
+      "Evidence exists on-chain but is not active.";
+  }
+
+  return {
+    evidenceId,
+
+    evidenceHash,
+
+    verified,
+
+    existsLocally: true,
+
+    onChainExists,
+
+    onChainActive,
+
+    hashValid,
+
+    signatureValid,
+
+    ownerMatches,
+
+    merkleProofValid,
+
+    reason,
+  };
+}
+
+/* =====================================================
+   VERIFY ALL EVIDENCE
+   ===================================================== */
+
+export async function verifyAchievementEvidenceSet(
+  achievement: StoredAchievement,
+): Promise<AchievementEvidenceVerification[]> {
+  const results:
+    AchievementEvidenceVerification[] =
+    [];
+
+  for (
+    const evidenceId of
+    achievement.evidenceIds
+  ) {
+    results.push(
+      await verifyAchievementEvidence(
+        achievement,
+        evidenceId,
+      ),
+    );
+  }
+
+  return results;
+}
+
+/* =====================================================
+   VERIFY ACHIEVEMENT
+   ===================================================== */
+
+export async function verifyAchievement(
+  achievement: StoredAchievement,
+  expectedOwner?: string,
+): Promise<AchievementVerificationResult> {
+  const owner =
+    achievement.achievement.owner;
+
+  const ownerMatches =
+    expectedOwner
+      ? ethers.isAddress(
+          expectedOwner,
+        ) &&
+        owner.toLowerCase() ===
+          expectedOwner.toLowerCase()
+      : true;
+
+  let localMerkleValid =
+    false;
+
+  let localMerkleRoot =
+    "";
+
+  try {
+    localMerkleRoot =
+      getMerkleRoot(
+        achievement.evidenceHashes,
+      );
+
+    localMerkleValid =
+      !achievement.merkleRoot ||
+      localMerkleRoot.toLowerCase() ===
+        achievement.merkleRoot.toLowerCase();
+  } catch {
+    localMerkleValid =
+      false;
+  }
+
+  const evidenceResults =
+    await verifyAchievementEvidenceSet(
+      achievement,
+    );
+
+  const allEvidenceVerified =
+    achievement.evidenceIds.length >
+      0 &&
+    evidenceResults.length ===
+      achievement.evidenceIds.length &&
+    evidenceResults.every(
+      (result) =>
+        result.verified,
+    );
+
+  let blockchainExists =
+    false;
+
+  let blockchainActive =
+    false;
+
+  let onChainMerkleRoot =
+    "";
+
+  let anchoredAt =
+    0;
+
+  let blockchainStatus:
+    | "NONE"
+    | "ANCHORED"
+    | "REVOKED" =
+    "NONE";
+
+  try {
+    const blockchainResult =
+      await verifyAchievementIntegrity(
+        achievement.id,
+        owner,
+        localMerkleRoot,
+      );
+
+    blockchainExists =
+      blockchainResult.blockchainExists;
+
+    blockchainActive =
+      blockchainResult.blockchainActive;
+
+    onChainMerkleRoot =
+      blockchainResult.onChainMerkleRoot;
+
+    anchoredAt =
+      blockchainResult.anchoredAt;
+
+    blockchainStatus =
+      blockchainResult.status;
+  } catch {
+    blockchainExists =
+      false;
+
+    blockchainActive =
+      false;
+  }
+
+  const merkleRootMatches =
+    Boolean(
+      achievement.merkleRoot &&
+      onChainMerkleRoot &&
+      achievement.merkleRoot.toLowerCase() ===
+        onChainMerkleRoot.toLowerCase(),
+    );
+
+  const verified =
+    localMerkleValid &&
+    allEvidenceVerified &&
+    ownerMatches &&
+    blockchainExists &&
+    blockchainActive &&
+    merkleRootMatches;
+
+  let reason =
+    "Achievement verification failed.";
+
+  if (verified) {
+    reason =
+      "Achievement is fully verified locally and against the blockchain anchor.";
+  } else if (!localMerkleValid) {
+    reason =
+      "Local achievement Merkle root is invalid.";
+  } else if (!ownerMatches) {
+    reason =
+      "Achievement owner does not match the expected owner.";
+  } else if (!allEvidenceVerified) {
+    reason =
+      "One or more achievement evidence items failed verification.";
+  } else if (!blockchainExists) {
+    reason =
+      "Achievement is not anchored on-chain.";
+  } else if (!blockchainActive) {
+    reason =
+      "Achievement exists on-chain but is not active.";
+  } else if (!merkleRootMatches) {
+    reason =
+      "Local Merkle root does not match the blockchain Merkle root.";
+  }
+
+  return {
+    verified,
+
+    exists:
+      blockchainExists,
+
+    active:
+      blockchainActive,
+
+    ownerMatches,
+
+    merkleRootMatches,
+
+    localMerkleValid,
+
+    blockchainExists,
+
+    blockchainActive,
+
+    localMerkleRoot,
+
+    onChainMerkleRoot,
+
+    achievementId:
+      achievement.id,
+
+    owner,
+
+    anchoredAt,
+
+    status:
+      blockchainStatus,
+
+    checks: {
+      localMerkleValid,
+
+      blockchainExists,
+
+      blockchainActive,
+
+      merkleRootMatches,
+
+      ownerMatches,
+    },
+
+    evidence:
+      evidenceResults,
+
+    reason,
+  };
+}
+
+/* =====================================================
+   VERIFY STORED ACHIEVEMENT
+   ===================================================== */
+
+export async function verifyStoredAchievement(
+  achievement: StoredAchievement,
+  expectedOwner?: string,
+): Promise<AchievementVerificationResult> {
+  return verifyAchievement(
+    achievement,
+    expectedOwner,
+  );
+}
+
+/* =====================================================
+   ANCHOR STORED ACHIEVEMENT
    ===================================================== */
 
 export async function anchorStoredAchievement(
-  achievement:
-    StoredAchievement,
+  achievement: StoredAchievement,
 ): Promise<StoredAchievement> {
+  if (
+    achievement.evidenceHashes.length ===
+    0
+  ) {
+    throw new Error(
+      "Cannot anchor an achievement without evidence.",
+    );
+  }
+
   if (
     !achievement.qualified
   ) {
@@ -876,36 +1426,30 @@ export async function anchorStoredAchievement(
   }
 
   if (
-    !achievement.merkleRoot
+    achievement.status ===
+    "REVOKED"
   ) {
     throw new Error(
-      "Achievement Merkle root is missing.",
+      "A revoked achievement cannot be anchored.",
     );
   }
 
-  const calculatedRoot =
-    buildMerkleTree(
+  const merkleRoot =
+    getMerkleRoot(
       achievement.evidenceHashes,
-    ).root;
-
-  if (
-    calculatedRoot.toLowerCase() !==
-    achievement.merkleRoot.toLowerCase()
-  ) {
-    throw new Error(
-      "Achievement Merkle root is invalid.",
     );
-  }
 
   const result =
     await anchorAchievement(
       achievement.id,
-      achievement.merkleRoot,
+      merkleRoot,
     );
 
   const updated:
     StoredAchievement = {
     ...achievement,
+
+    merkleRoot,
 
     status:
       "ACHIEVED",
@@ -926,225 +1470,29 @@ export async function anchorStoredAchievement(
 }
 
 /* =====================================================
-   READ BLOCKCHAIN RECORD
+   REVOKE STORED ACHIEVEMENT
    ===================================================== */
 
-export async function getAchievementBlockchainRecord(
-  achievementId: string,
-): Promise<AchievementBlockchainRecord> {
-  return verifyAchievement(
-    achievementId,
-  );
-}
-
-/* =====================================================
-   FULL ACHIEVEMENT VERIFICATION
-   ===================================================== */
-
-export async function verifyStoredAchievement(
-  achievement:
-    StoredAchievement,
-): Promise<{
-  verified: boolean;
-  localMerkleValid: boolean;
-  blockchainExists: boolean;
-  blockchainActive: boolean;
-  merkleRootMatches: boolean;
-  ownerMatches: boolean;
-  blockchain: AchievementBlockchainRecord;
-  reason: string;
-}> {
-  if (
-    !achievement.merkleRoot
-  ) {
-    throw new Error(
-      "Achievement has no Merkle root.",
-    );
-  }
-
-  const localMerkleValid =
-    verifyMerkleTree(
-      achievement.evidenceHashes,
-      achievement.merkleRoot,
-    );
-
-  const blockchain =
-    await verifyAchievement(
+export async function revokeStoredAchievement(
+  achievement: StoredAchievement,
+): Promise<StoredAchievement> {
+  const result =
+    await revokeAchievementOnChain(
       achievement.id,
-    );
-
-  const blockchainExists =
-    blockchain.exists;
-
-  const blockchainActive =
-    blockchain.status ===
-    "ANCHORED";
-
-  const merkleRootMatches =
-    blockchainExists &&
-    blockchain.merkleRoot
-      .toLowerCase() ===
-      achievement.merkleRoot
-        .toLowerCase();
-
-  const ownerMatches =
-    blockchainExists &&
-    blockchain.owner
-      .toLowerCase() ===
-      achievement.achievement.owner
-        .toLowerCase();
-
-  const verified =
-    localMerkleValid &&
-    blockchainExists &&
-    blockchainActive &&
-    merkleRootMatches &&
-    ownerMatches;
-
-  let reason =
-    "Achievement verification failed.";
-
-  if (!localMerkleValid) {
-    reason =
-      "Local evidence hashes do not produce the stored Merkle root.";
-  } else if (!blockchainExists) {
-    reason =
-      "Achievement is not anchored on Ethereum Sepolia.";
-  } else if (!blockchainActive) {
-    reason =
-      "Achievement exists on-chain but is revoked.";
-  } else if (!merkleRootMatches) {
-    reason =
-      "The local Merkle root does not match the blockchain root.";
-  } else if (!ownerMatches) {
-    reason =
-      "The achievement owner does not match the blockchain owner.";
-  } else {
-    reason =
-      "Achievement is cryptographically verified against Ethereum Sepolia.";
-  }
-
-  return {
-    verified,
-
-    localMerkleValid,
-
-    blockchainExists,
-
-    blockchainActive,
-
-    merkleRootMatches,
-
-    ownerMatches,
-
-    blockchain,
-
-    reason,
-  };
-}
-
-/* =====================================================
-   DIRECT BLOCKCHAIN CHECKS
-   ===================================================== */
-
-export async function checkAchievementOnChain(
-  achievement:
-    StoredAchievement,
-): Promise<{
-  exists: boolean;
-  active: boolean;
-  merkleRootMatches: boolean;
-  ownerMatches: boolean;
-}> {
-  if (
-    !achievement.merkleRoot
-  ) {
-    return {
-      exists: false,
-      active: false,
-      merkleRootMatches: false,
-      ownerMatches: false,
-    };
-  }
-
-  const [
-    blockchain,
-    rootMatches,
-    ownerMatches,
-  ] = await Promise.all([
-    verifyAchievement(
-      achievement.id,
-    ),
-
-    verifyAchievementMerkleRoot(
-      achievement.id,
-      achievement.merkleRoot,
-    ),
-
-    verifyAchievementOwner(
-      achievement.id,
-      achievement.achievement.owner,
-    ),
-  ]);
-
-  return {
-    exists:
-      blockchain.exists,
-
-    active:
-      blockchain.status ===
-      "ANCHORED",
-
-    merkleRootMatches:
-      rootMatches,
-
-    ownerMatches,
-  };
-}
-
-/* =====================================================
-   REBUILD FROM STUDENT EVIDENCE
-   ===================================================== */
-
-export function refreshAchievement(
-  achievement:
-    StoredAchievement,
-): StoredAchievement {
-  const evidence =
-    getAchievementEvidence(
-      achievement.evidenceIds,
-    );
-
-  const results =
-    evaluateAchievementCriteria(
-      achievement
-        .achievement.criteria,
-      evidence,
-    );
-
-  const qualified =
-    results.length > 0 &&
-    results.every(
-      (result) =>
-        result.passed,
     );
 
   const updated:
     StoredAchievement = {
     ...achievement,
 
-    criterionResults:
-      results,
-
-    qualified,
-
     status:
-      achievement.status ===
-        "REVOKED"
-        ? "REVOKED"
-        : qualified
-          ? "ACHIEVED"
-          : "EVIDENCE_COLLECTING",
+      "REVOKED",
+
+    anchorTransactionHash:
+      result.transactionHash,
+
+    anchorBlockNumber:
+      result.blockNumber,
 
     updatedAt:
       Date.now(),
@@ -1153,4 +1501,45 @@ export function refreshAchievement(
   return updateStoredAchievement(
     updated,
   );
+}
+
+/* =====================================================
+   SUMMARY
+   ===================================================== */
+
+export function getAchievementSummary(
+  achievement: StoredAchievement,
+): {
+  evidenceCount: number;
+  verifiedEvidence: number;
+  revokedEvidence: number;
+  qualified: boolean;
+  status: AchievementStatus;
+  merkleRoot: string;
+} {
+  const graph =
+    buildEvidenceGraph(
+      achievement,
+    );
+
+  return {
+    evidenceCount:
+      graph.totalEvidence,
+
+    verifiedEvidence:
+      graph.verifiedEvidence,
+
+    revokedEvidence:
+      graph.revokedEvidence,
+
+    qualified:
+      achievement.qualified,
+
+    status:
+      achievement.status,
+
+    merkleRoot:
+      achievement.merkleRoot ??
+      "",
+  };
 }
