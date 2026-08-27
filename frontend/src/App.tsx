@@ -26,6 +26,13 @@ import UniversityAnalytics from "./pages/University/UniversityAnalytics";
 
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import StudentCredentialDetails from "./pages/Student/StudentCredentialDetails";
+import StudentEvidence from "./pages/Student/StudentEvidence";
+
+/* =====================================================
+   PHASE 1 - EVIDENCE FOUNDATION
+   ===================================================== */
+
+import EvidenceTest from "./pages/Student/EvidenceTest";
 
 /* =====================================================
    PUBLIC VERIFIER
@@ -52,6 +59,10 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 function LandingPage() {
   return (
     <div className="landing-page">
+      {/* =================================================
+          HEADER
+          ================================================= */}
+
       <header className="landing-header">
         <div className="brand">
           <div className="brand-mark">
@@ -70,6 +81,10 @@ function LandingPage() {
         </div>
       </header>
 
+      {/* =================================================
+          MAIN
+          ================================================= */}
+
       <main className="landing-main">
         <div className="landing-eyebrow">
           EDUPROOF PLATFORM
@@ -85,7 +100,6 @@ function LandingPage() {
         </p>
 
         <div className="role-grid">
-
           {/* =================================================
               UNIVERSITY
               ================================================= */}
@@ -113,7 +127,9 @@ function LandingPage() {
 
             <div className="role-action">
               Enter University Portal
-              <span>→</span>
+              <span>
+                →
+              </span>
             </div>
           </Link>
 
@@ -144,7 +160,9 @@ function LandingPage() {
 
             <div className="role-action">
               Enter Student Portal
-              <span>→</span>
+              <span>
+                →
+              </span>
             </div>
           </Link>
 
@@ -175,7 +193,9 @@ function LandingPage() {
 
             <div className="role-action">
               Open Verification Center
-              <span>→</span>
+              <span>
+                →
+              </span>
             </div>
           </Link>
 
@@ -207,7 +227,9 @@ function LandingPage() {
 
             <div className="role-action">
               Apply for Authorization
-              <span>→</span>
+              <span>
+                →
+              </span>
             </div>
           </Link>
 
@@ -238,10 +260,11 @@ function LandingPage() {
 
             <div className="role-action">
               Open Admin Portal
-              <span>→</span>
+              <span>
+                →
+              </span>
             </div>
           </Link>
-
         </div>
       </main>
     </div>
@@ -256,7 +279,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =================================================
             LANDING
             ================================================= */}
@@ -347,6 +369,24 @@ function App() {
           element={<StudentCredentialDetails />}
         />
 
+        {/* =================================================
+            MY EVIDENCE
+            ================================================= */}
+
+        <Route
+          path="/student/evidence"
+          element={<StudentEvidence />}
+        />
+
+        {/* =================================================
+            EVIDENCE TEST
+            ================================================= */}
+
+        <Route
+          path="/student/evidence-test"
+          element={<EvidenceTest />}
+        />
+
         <Route
           path="/student/*"
           element={<StudentDashboard />}
@@ -356,23 +396,16 @@ function App() {
             PUBLIC VERIFIER
             ================================================= */}
 
-        {/* Normal manual verification */}
         <Route
           path="/verify"
           element={<VerifierPage />}
         />
 
-        {/* QR CODE VERIFICATION
-            Example:
-            /verify/2
-            /verify/17
-        */}
         <Route
           path="/verify/:id"
           element={<VerifierPage />}
         />
 
-        {/* Existing verifier fallback */}
         <Route
           path="/verify/*"
           element={<VerifierPage />}
@@ -391,7 +424,6 @@ function App() {
             />
           }
         />
-
       </Routes>
     </BrowserRouter>
   );

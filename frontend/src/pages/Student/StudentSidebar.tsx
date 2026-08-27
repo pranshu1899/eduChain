@@ -1,7 +1,4 @@
-import {
-  Link,
-  useLocation,
-} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function StudentSidebar() {
   const location = useLocation();
@@ -16,6 +13,10 @@ export default function StudentSidebar() {
 
   return (
     <aside className="student-sidebar">
+
+      {/* =====================================================
+          BRAND
+          ===================================================== */}
 
       <div className="student-brand">
 
@@ -35,11 +36,21 @@ export default function StudentSidebar() {
 
       </div>
 
+      {/* =====================================================
+          PORTAL LABEL
+          ===================================================== */}
+
       <div className="student-portal-label">
         STUDENT PORTAL
       </div>
 
+      {/* =====================================================
+          NAVIGATION
+          ===================================================== */}
+
       <nav className="student-navigation">
+
+        {/* OVERVIEW */}
 
         <Link
           to="/student"
@@ -58,6 +69,8 @@ export default function StudentSidebar() {
           </span>
         </Link>
 
+        {/* CREDENTIALS */}
+
         <Link
           to="/student/credentials"
           className={
@@ -75,7 +88,32 @@ export default function StudentSidebar() {
           </span>
         </Link>
 
+        {/* =================================================
+            NEW: EVIDENCE
+            ================================================= */}
+
+        <Link
+          to="/student/evidence"
+          className={
+            isActive("/student/evidence")
+              ? "student-nav-item active"
+              : "student-nav-item"
+          }
+        >
+          <span className="student-nav-icon">
+            ◇
+          </span>
+
+          <span>
+            My Evidence
+          </span>
+        </Link>
+
       </nav>
+
+      {/* =====================================================
+          SIDEBAR BOTTOM
+          ===================================================== */}
 
       <div className="student-sidebar-bottom">
 

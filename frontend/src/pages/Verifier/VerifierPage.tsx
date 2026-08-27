@@ -5,12 +5,19 @@ import {
 } from "react";
 
 import {
+  Link,
   useParams,
+  useSearchParams,
 } from "react-router-dom";
 
 import {
   getReadOnlyContract,
 } from "../../services/eduProof";
+
+import {
+  EVIDENCE_REGISTRY_ADDRESS,
+  verifyEvidenceIntegrity,
+} from "../../services/evidenceRegistry";
 
 interface Credential {
   id: number;
@@ -31,20 +38,30 @@ interface Credential {
   previousVersionId: number;
 }
 
+interface EvidenceVerification {
+  verified: boolean;
+  exists: boolean;
+  ownerMatches: boolean;
+  active: boolean;
+  owner: string;
+  anchoredAt: number;
+  status: number;
+  reason: string;
+}
+
+const SEPOLIA_EXPLORER =
+  "https://sepolia.etherscan.io";
+
+
 /*
  * =========================================================
- * CONTRACT STATUS MAPPING
+ * CREDENTIAL STATUS
  * =========================================================
- *
- * Solidity enum:
- *
- * 0 = NONE
- * 1 = ACTIVE
- * 2 = SUPERSEDED
- * 3 = REVOKED
  */
 
-function statusText(status: number) {
+function statusText(
+  status: number,
+): string {
   switch (status) {
     case 0:
       return "NONE";
@@ -63,7 +80,9 @@ function statusText(status: number) {
   }
 }
 
-function statusClass(status: number) {
+function statusClass(
+  status: number,
+): string {
   switch (status) {
     case 1:
       return "verified";
@@ -79,14 +98,27 @@ function statusClass(status: number) {
   }
 }
 
-function formatDate(date: string) {
+/*
+ * =========================================================
+ * HELPERS
+ * =========================================================
+ */
+
+function formatDate(
+  date: string,
+): string {
   if (!date) {
     return "Unknown";
   }
 
-  const parsed = new Date(date);
+  const parsed =
+    new Date(date);
 
-  if (Number.isNaN(parsed.getTime())) {
+  if (
+    Number.isNaN(
+      parsed.getTime(),
+    )
+  ) {
     return date;
   }
 
@@ -100,11 +132,32 @@ function formatDate(date: string) {
   );
 }
 
+function formatTimestamp(
+  timestamp: number,
+): string {
+  if (!timestamp) {
+    return "Not available";
+  }
+
+  return new Date(
+    timestamp * 1000,
+  ).toLocaleString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
+}
+
 function shortenValue(
   value: string,
   start = 18,
   end = 12,
-) {
+): string {
   if (!value) {
     return "Not available";
   }
@@ -122,29 +175,57 @@ function shortenValue(
   )}...${value.slice(-end)}`;
 }
 
+function isValidBytes32Hash(
+  value: string,
+): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(
+    value.trim(),
+  );
+}
+
+/*
+ * =========================================================
+ * COMPONENT
+ * =========================================================
+ */
+
 export default function VerifierPage() {
-
-  /*
-   * =========================================================
-   * QR / URL PARAMETER
-   * =========================================================
-   *
-   * Normal verification:
-   *
-   * /verify
-   *
-   * QR verification:
-   *
-   * /verify/2
-   *
-   * The credential ID comes from the URL.
-   */
-
   const {
     id: routeCredentialId,
   } = useParams<{
     id?: string;
   }>();
+
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
+  /*
+   * =======================================================
+   * EVIDENCE URL
+   * =======================================================
+   *
+   * QR codes use:
+   *
+   * /verify?hash=0x...
+   */
+
+  const evidenceHashFromUrl =
+    searchParams.get(
+      "hash",
+    ) ?? "";
+
+  const isEvidenceMode =
+    Boolean(
+      evidenceHashFromUrl.trim(),
+    );
+
+  /*
+   * =======================================================
+   * CREDENTIAL STATE
+   * =======================================================
+   */
 
   const [
     credentialId,
@@ -156,16 +237,45 @@ export default function VerifierPage() {
   const [
     credential,
     setCredential,
-  ] = useState<Credential | null>(
-    null,
-  );
+  ] =
+    useState<Credential | null>(
+      null,
+    );
 
   const [
     signatureValid,
     setSignatureValid,
-  ] = useState<boolean | null>(
-    null,
+  ] =
+    useState<boolean | null>(
+      null,
+    );
+
+  /*
+   * =======================================================
+   * EVIDENCE STATE
+   * =======================================================
+   */
+
+  const [
+    evidenceHash,
+    setEvidenceHash,
+  ] = useState(
+    evidenceHashFromUrl,
   );
+
+  const [
+    evidenceVerification,
+    setEvidenceVerification,
+  ] =
+    useState<EvidenceVerification | null>(
+      null,
+    );
+
+  /*
+   * =======================================================
+   * GENERAL STATE
+   * =======================================================
+   */
 
   const [
     loading,
@@ -183,214 +293,303 @@ export default function VerifierPage() {
   ] = useState(false);
 
   /*
-   * =========================================================
+   * =======================================================
    * VERIFY CREDENTIAL
-   * =========================================================
+   * =======================================================
    */
 
-  const verifyCredential = async (
-    idValue: string,
-  ) => {
+  const verifyCredential =
+    async (
+      idValue: string,
+    ): Promise<void> => {
+      setError("");
+      setCredential(null);
+      setSignatureValid(null);
+      setHasSearched(true);
 
-    setError("");
-    setCredential(null);
-    setSignatureValid(null);
-    setHasSearched(true);
-
-    const id = Number(
-      idValue.trim(),
-    );
-
-    if (
-      !Number.isInteger(id) ||
-      id <= 0
-    ) {
-      setError(
-        "Enter a valid credential ID.",
-      );
-
-      return;
-    }
-
-    try {
-
-      setLoading(true);
-
-      const contract =
-        getReadOnlyContract();
-
-      /*
-       * Read credential directly
-       * from the Sepolia contract.
-       */
-
-      const result =
-        await contract.getCredential(
-          id,
+      const id =
+        Number(
+          idValue.trim(),
         );
 
-      const loadedCredential:
-        Credential = {
-        id: Number(
-          result.id,
-        ),
-
-        rootCredentialId:
-          Number(
-            result.rootCredentialId,
-          ),
-
-        issuer:
-          String(
-            result.issuer,
-          ),
-
-        studentDID:
-          String(
-            result.studentDID,
-          ),
-
-        credentialType:
-          String(
-            result.credentialType,
-          ),
-
-        institution:
-          String(
-            result.institution,
-          ),
-
-        institutionId:
-          String(
-            result.institutionId,
-          ),
-
-        degree:
-          String(
-            result.degree,
-          ),
-
-        issueDate:
-          String(
-            result.issueDate,
-          ),
-
-        credentialHash:
-          String(
-            result.credentialHash,
-          ),
-
-        signature:
-          String(
-            result.signature,
-          ),
-
-        cid:
-          String(
-            result.cid,
-          ),
-
-        version:
-          Number(
-            result.version,
-          ),
-
-        status:
-          Number(
-            result.status,
-          ),
-
-        issuedAt:
-          Number(
-            result.issuedAt,
-          ),
-
-        previousVersionId:
-          Number(
-            result.previousVersionId,
-          ),
-      };
-
-      setCredential(
-        loadedCredential,
-      );
-
-      /*
-       * Verify issuer signature independently.
-       */
-
-      const valid =
-        await contract.verifyCredentialSignature(
-          id,
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        setError(
+          "Enter a valid credential ID.",
         );
 
-      setSignatureValid(
-        Boolean(valid),
-      );
+        return;
+      }
 
-    } catch (verificationError) {
+      try {
+        setLoading(true);
 
-      console.error(
-        "Credential verification failed:",
-        verificationError,
-      );
+        const contract =
+          getReadOnlyContract();
 
-      setError(
-        "Credential not found or could not be read from the Sepolia blockchain.",
-      );
+        const result =
+          await contract.getCredential(
+            id,
+          );
 
-    } finally {
+        const loadedCredential:
+          Credential = {
+          id: Number(
+            result.id,
+          ),
 
-      setLoading(false);
+          rootCredentialId:
+            Number(
+              result.rootCredentialId,
+            ),
 
-    }
-  };
+          issuer:
+            String(
+              result.issuer,
+            ),
+
+          studentDID:
+            String(
+              result.studentDID,
+            ),
+
+          credentialType:
+            String(
+              result.credentialType,
+            ),
+
+          institution:
+            String(
+              result.institution,
+            ),
+
+          institutionId:
+            String(
+              result.institutionId,
+            ),
+
+          degree:
+            String(
+              result.degree,
+            ),
+
+          issueDate:
+            String(
+              result.issueDate,
+            ),
+
+          credentialHash:
+            String(
+              result.credentialHash,
+            ),
+
+          signature:
+            String(
+              result.signature,
+            ),
+
+          cid:
+            String(
+              result.cid,
+            ),
+
+          version:
+            Number(
+              result.version,
+            ),
+
+          status:
+            Number(
+              result.status,
+            ),
+
+          issuedAt:
+            Number(
+              result.issuedAt,
+            ),
+
+          previousVersionId:
+            Number(
+              result.previousVersionId,
+            ),
+        };
+
+        setCredential(
+          loadedCredential,
+        );
+
+        const valid =
+          await contract.verifyCredentialSignature(
+            id,
+          );
+
+        setSignatureValid(
+          Boolean(valid),
+        );
+      } catch (
+        verificationError
+      ) {
+        console.error(
+          "Credential verification failed:",
+          verificationError,
+        );
+
+        setError(
+          "Credential not found or could not be read from the Sepolia blockchain.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
   /*
-   * =========================================================
-   * QR AUTO-VERIFICATION
-   * =========================================================
+   * =======================================================
+   * VERIFY EVIDENCE
+   * =======================================================
    *
-   * If the verifier opens:
+   * This is a public, read-only blockchain verification.
    *
-   * /verify/2
-   *
-   * automatically verify credential #2.
-   *
-   * If they open:
-   *
-   * /verify
-   *
-   * normal manual verification remains available.
+   * No wallet is required.
+   */
+
+  const verifyEvidence =
+    async (
+      hashValue: string,
+    ): Promise<void> => {
+      const normalizedHash =
+        hashValue.trim();
+
+      setError("");
+      setEvidenceVerification(
+        null,
+      );
+      setHasSearched(true);
+
+      if (!normalizedHash) {
+        setError(
+          "Enter an evidence hash.",
+        );
+
+        return;
+      }
+
+      if (
+        !isValidBytes32Hash(
+          normalizedHash,
+        )
+      ) {
+        setError(
+          "Invalid evidence hash. Expected a 32-byte hexadecimal hash beginning with 0x.",
+        );
+
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        /*
+         * Read directly from the deployed
+         * EvidenceRegistry contract.
+         *
+         * No MetaMask is needed.
+         */
+        const verification =
+          await verifyEvidenceIntegrity(
+            normalizedHash,
+          );
+
+        setEvidenceVerification(
+          verification,
+        );
+
+        /*
+         * Keep the URL shareable.
+         *
+         * This is also the URL embedded
+         * inside the QR code.
+         */
+        if (
+          evidenceHashFromUrl.trim() !==
+          normalizedHash
+        ) {
+          setSearchParams(
+            {
+              hash:
+                normalizedHash,
+            },
+            {
+              replace: true,
+            },
+          );
+        }
+      } catch (
+        verificationError
+      ) {
+        console.error(
+          "Evidence verification failed:",
+          verificationError,
+        );
+
+        setError(
+          verificationError instanceof Error
+            ? verificationError.message
+            : "Unable to verify evidence against Ethereum Sepolia.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  /*
+   * =======================================================
+   * AUTO VERIFY QR
+   * =======================================================
    */
 
   useEffect(() => {
+    if (
+      evidenceHashFromUrl.trim()
+    ) {
+      setEvidenceHash(
+        evidenceHashFromUrl.trim(),
+      );
 
-    if (!routeCredentialId) {
+      void verifyEvidence(
+        evidenceHashFromUrl.trim(),
+      );
+
       return;
     }
 
-    setCredentialId(
-      routeCredentialId,
-    );
+    if (
+      routeCredentialId
+    ) {
+      setCredentialId(
+        routeCredentialId,
+      );
 
-    void verifyCredential(
-      routeCredentialId,
-    );
-
-  }, [routeCredentialId]);
+      void verifyCredential(
+        routeCredentialId,
+      );
+    }
+  }, [
+    routeCredentialId,
+    evidenceHashFromUrl,
+  ]);
 
   /*
-   * =========================================================
-   * MANUAL FORM SUBMISSION
-   * =========================================================
+   * =======================================================
+   * MANUAL CREDENTIAL SUBMIT
+   * =======================================================
    */
 
-  const handleManualVerification =
+  const handleCredentialSubmit =
     async (
       event: FormEvent<HTMLFormElement>,
-    ) => {
-
+    ): Promise<void> => {
       event.preventDefault();
 
       await verifyCredential(
@@ -399,30 +598,54 @@ export default function VerifierPage() {
     };
 
   /*
-   * =========================================================
-   * RESET
-   * =========================================================
+   * =======================================================
+   * MANUAL EVIDENCE SUBMIT
+   * =======================================================
    */
 
-  const resetVerification =
-    () => {
+  const handleEvidenceSubmit =
+    async (
+      event: FormEvent<HTMLFormElement>,
+    ): Promise<void> => {
+      event.preventDefault();
 
-      setCredentialId("");
-      setCredential(null);
-      setSignatureValid(null);
-      setError("");
-      setHasSearched(false);
-
-      /*
-       * We intentionally do not navigate here.
-       * This keeps the current route behaviour simple.
-       */
+      await verifyEvidence(
+        evidenceHash,
+      );
     };
 
   /*
-   * =========================================================
-   * STATUS LOGIC
-   * =========================================================
+   * =======================================================
+   * RESET
+   * =======================================================
+   */
+
+  const resetVerification =
+    (): void => {
+      setCredentialId("");
+      setCredential(null);
+      setSignatureValid(null);
+
+      setEvidenceHash("");
+      setEvidenceVerification(
+        null,
+      );
+
+      setError("");
+      setHasSearched(false);
+
+      setSearchParams(
+        {},
+        {
+          replace: true,
+        },
+      );
+    };
+
+  /*
+   * =======================================================
+   * CREDENTIAL DERIVED STATE
+   * =======================================================
    */
 
   const isActive =
@@ -443,9 +666,27 @@ export default function VerifierPage() {
     isActive;
 
   /*
-   * =========================================================
+   * =======================================================
+   * EVIDENCE DERIVED STATE
+   * =======================================================
+   */
+
+  const evidenceIsVerified =
+    evidenceVerification?.verified ===
+    true;
+
+  const evidenceExists =
+    evidenceVerification?.exists ===
+    true;
+
+  const evidenceIsActive =
+    evidenceVerification?.active ===
+    true;
+
+  /*
+   * =======================================================
    * RENDER
-   * =========================================================
+   * =======================================================
    */
 
   return (
@@ -457,25 +698,35 @@ export default function VerifierPage() {
 
       <header className="verifier-header">
 
-        <div className="verifier-brand">
+        <Link
+          to="/"
+          style={{
+            textDecoration:
+              "none",
+            color:
+              "inherit",
+          }}
+        >
+          <div className="verifier-brand">
 
-          <div className="verifier-brand-mark">
-            E
-          </div>
-
-          <div>
-
-            <div className="verifier-brand-name">
-              EduProof
+            <div className="verifier-brand-mark">
+              E
             </div>
 
-            <div className="verifier-brand-subtitle">
-              Decentralized Academic Credentials
+            <div>
+
+              <div className="verifier-brand-name">
+                EduProof
+              </div>
+
+              <div className="verifier-brand-subtitle">
+                Decentralized Academic Credentials
+              </div>
+
             </div>
 
           </div>
-
-        </div>
+        </Link>
 
         <div className="verifier-network">
 
@@ -498,17 +749,17 @@ export default function VerifierPage() {
         </div>
 
         <h1>
-          Verify an Academic Credential
+          Verify on the Blockchain
         </h1>
 
         <p className="verifier-description">
-          Verify credential authenticity directly against
-          the EduProof blockchain record. No university
-          wallet is required.
+          Verify academic credentials and achievement
+          evidence directly against EduProof records
+          anchored on Ethereum Sepolia.
         </p>
 
         {/* =================================================
-            SEARCH CARD
+            EVIDENCE VERIFICATION
             ================================================= */}
 
         <section className="verifier-search-card">
@@ -516,19 +767,19 @@ export default function VerifierPage() {
           <div className="verifier-search-heading">
 
             <div className="verifier-search-icon">
-              ✓
+              ◈
             </div>
 
             <div>
 
               <h2>
-                Credential Verification
+                Evidence Verification
               </h2>
 
               <p>
-                {routeCredentialId
-                  ? `Credential #${routeCredentialId} was opened from a verification link.`
-                  : "Enter the credential ID stored on the EduProof blockchain."}
+                Verify a cryptographic evidence commitment
+                directly against Ethereum Sepolia.
+                No wallet is required.
               </p>
 
             </div>
@@ -537,41 +788,50 @@ export default function VerifierPage() {
 
           <form
             onSubmit={
-              handleManualVerification
+              handleEvidenceSubmit
             }
             className="verifier-form"
           >
 
-            <label
-              htmlFor="credential-id"
-            >
-              CREDENTIAL ID
+            <label>
+              EVIDENCE HASH
             </label>
 
             <div className="verifier-input-row">
 
               <input
-                id="credential-id"
-                type="number"
-                min="1"
+                type="text"
                 value={
-                  credentialId
+                  evidenceHash
                 }
-                onChange={(event) =>
-                  setCredentialId(
+                onChange={(
+                  event,
+                ) => {
+                  setEvidenceHash(
                     event.target.value,
-                  )
+                  );
+
+                  setEvidenceVerification(
+                    null,
+                  );
+
+                  setError("");
+                }}
+                placeholder="0x..."
+                spellCheck={
+                  false
                 }
-                placeholder="e.g. 1"
               />
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading
+                }
               >
                 {loading
                   ? "Verifying..."
-                  : "Verify Credential"}
+                  : "Verify Evidence"}
               </button>
 
             </div>
@@ -581,36 +841,11 @@ export default function VerifierPage() {
         </section>
 
         {/* =================================================
-            QR VERIFICATION NOTICE
+            EVIDENCE ERROR
             ================================================= */}
 
-        {routeCredentialId &&
-          loading && (
-
-            <section className="verifier-empty">
-
-              <div className="verifier-empty-icon">
-                ↻
-              </div>
-
-              <h3>
-                Verifying Credential #{routeCredentialId}
-              </h3>
-
-              <p>
-                Checking the credential directly against
-                the EduProof blockchain.
-              </p>
-
-            </section>
-
-          )}
-
-        {/* =================================================
-            ERROR
-            ================================================= */}
-
-        {error && (
+        {isEvidenceMode &&
+          error && (
 
           <section className="verifier-error">
 
@@ -621,7 +856,7 @@ export default function VerifierPage() {
             <div>
 
               <strong>
-                Verification failed
+                Evidence verification failed
               </strong>
 
               <p>
@@ -631,128 +866,87 @@ export default function VerifierPage() {
             </div>
 
           </section>
-
         )}
 
         {/* =================================================
-            EMPTY STATE
+            EVIDENCE RESULT
             ================================================= */}
 
-        {!loading &&
-          !credential &&
-          !error &&
-          !hasSearched && (
-
-            <section className="verifier-empty">
-
-              <div className="verifier-empty-icon">
-                ◇
-              </div>
-
-              <h3>
-                Ready to verify
-              </h3>
-
-              <p>
-                Enter a credential ID above to check
-                its blockchain authenticity and current
-                on-chain status.
-              </p>
-
-            </section>
-
-          )}
-
-        {/* =================================================
-            RESULT
-            ================================================= */}
-
-        {credential && (
+        {evidenceVerification && (
 
           <section className="verifier-result">
 
-            {/* =================================================
-                RESULT HEADER
-                ================================================= */}
+            {/* RESULT BANNER */}
 
             <div
-              className={`verifier-result-banner ${statusClass(
-                credential.status,
-              )}`}
+              className={`verifier-result-banner ${
+                evidenceIsVerified
+                  ? "verified"
+                  : evidenceExists
+                    ? "revoked"
+                    : "unknown"
+              }`}
             >
 
               <div className="verifier-result-symbol">
 
-                {isActuallyValid
+                {evidenceIsVerified
                   ? "✓"
-                  : isRevoked
-                    ? "×"
-                    : isSuperseded
-                      ? "↻"
-                      : "!"}
+                  : "×"}
 
               </div>
 
               <div>
 
                 <span>
-                  VERIFICATION RESULT
+                  EVIDENCE VERIFICATION RESULT
                 </span>
 
                 <h2>
-
-                  {isActuallyValid
-                    ? "Credential Verified"
-                    : isRevoked
-                      ? "Credential Revoked"
-                      : isSuperseded
-                        ? "Credential Superseded"
-                        : "Credential Status Unknown"}
-
+                  {evidenceIsVerified
+                    ? "Evidence Verified"
+                    : evidenceExists
+                      ? "Evidence Not Active"
+                      : "Evidence Not Anchored"}
                 </h2>
 
                 <p>
-
-                  {isActuallyValid
-                    ? "This credential has a valid issuer signature and is currently active on-chain."
-                    : isRevoked
-                      ? "This credential has a valid issuer signature but has been revoked on-chain."
-                      : isSuperseded
-                        ? "This credential has been replaced by a newer version."
-                        : "The credential was found, but its current status could not be determined."}
-
+                  {
+                    evidenceVerification.reason
+                  }
                 </p>
 
               </div>
 
               <div className="verifier-result-status">
 
-                {statusText(
-                  credential.status,
-                )}
+                {evidenceIsVerified
+                  ? "VERIFIED"
+                  : evidenceExists
+                    ? "REVOKED / INVALID"
+                    : "NOT ANCHORED"}
 
               </div>
 
             </div>
 
-            {/* =================================================
-                CREDENTIAL INFORMATION
-                ================================================= */}
+            {/* BLOCKCHAIN RECORD */}
 
             <div className="verifier-section">
 
               <div className="verifier-section-heading">
 
                 <span>
-                  CREDENTIAL RECORD
+                  SEPOLIA EVIDENCE RECORD
                 </span>
 
                 <h2>
-                  {credential.degree}
+                  Cryptographic Commitment
                 </h2>
 
                 <p>
-                  {credential.institution}
+                  These values are read from the deployed
+                  EvidenceRegistry smart contract.
                 </p>
 
               </div>
@@ -762,65 +956,13 @@ export default function VerifierPage() {
                 <div className="verifier-info-item">
 
                   <span>
-                    CREDENTIAL ID
+                    HASH EXISTS
                   </span>
 
                   <strong>
-                    #{credential.id}
-                  </strong>
-
-                </div>
-
-                <div className="verifier-info-item">
-
-                  <span>
-                    CREDENTIAL TYPE
-                  </span>
-
-                  <strong>
-                    {
-                      credential.credentialType
-                    }
-                  </strong>
-
-                </div>
-
-                <div className="verifier-info-item">
-
-                  <span>
-                    ISSUE DATE
-                  </span>
-
-                  <strong>
-                    {formatDate(
-                      credential.issueDate,
-                    )}
-                  </strong>
-
-                </div>
-
-                <div className="verifier-info-item">
-
-                  <span>
-                    VERSION
-                  </span>
-
-                  <strong>
-                    v{credential.version}
-                  </strong>
-
-                </div>
-
-                <div className="verifier-info-item">
-
-                  <span>
-                    INSTITUTION ID
-                  </span>
-
-                  <strong>
-                    {
-                      credential.institutionId
-                    }
+                    {evidenceExists
+                      ? "YES"
+                      : "NO"}
                   </strong>
 
                 </div>
@@ -831,225 +973,863 @@ export default function VerifierPage() {
                     ON-CHAIN STATUS
                   </span>
 
+                  <strong>
+                    {evidenceExists
+                      ? evidenceIsActive
+                        ? "ACTIVE"
+                        : "REVOKED"
+                      : "NOT FOUND"}
+                  </strong>
+
+                </div>
+
+                <div className="verifier-info-item">
+
+                  <span>
+                    OWNER
+                  </span>
+
                   <strong
-                    className={`verifier-status-text ${statusClass(
-                      credential.status,
-                    )}`}
+                    style={{
+                      wordBreak:
+                        "break-all",
+                    }}
                   >
-                    {statusText(
-                      credential.status,
-                    )}
+                    {evidenceVerification.owner
+                      ? shortenValue(
+                          evidenceVerification.owner,
+                        )
+                      : "Not available"}
+                  </strong>
+
+                </div>
+
+                <div className="verifier-info-item">
+
+                  <span>
+                    OWNER MATCH
+                  </span>
+
+                  <strong>
+                    {evidenceExists
+                      ? evidenceVerification.ownerMatches
+                        ? "YES"
+                        : "NOT PROVIDED"
+                      : "N/A"}
                   </strong>
 
                 </div>
 
               </div>
 
+              {evidenceExists && (
+
+                <div
+                  className="verifier-proof-grid"
+                  style={{
+                    marginTop:
+                      "22px",
+                  }}
+                >
+
+                  <div className="verifier-proof-field">
+
+                    <span>
+                      EVIDENCE HASH
+                    </span>
+
+                    <code>
+                      {
+                        evidenceHash
+                      }
+                    </code>
+
+                  </div>
+
+                  <div className="verifier-proof-field">
+
+                    <span>
+                      ON-CHAIN OWNER
+                    </span>
+
+                    <code>
+                      {
+                        evidenceVerification.owner
+                      }
+                    </code>
+
+                  </div>
+
+                  <div className="verifier-proof-field">
+
+                    <span>
+                      ANCHORED AT
+                    </span>
+
+                    <strong>
+                      {formatTimestamp(
+                        evidenceVerification.anchoredAt,
+                      )}
+                    </strong>
+
+                  </div>
+
+                  <div className="verifier-proof-field">
+
+                    <span>
+                      NETWORK
+                    </span>
+
+                    <strong>
+                      Ethereum Sepolia
+                    </strong>
+
+                  </div>
+
+                </div>
+
+              )}
+
+              {/* CONTRACT */}
+
+              <div
+                className="verifier-proof-field"
+                style={{
+                  marginTop:
+                    "22px",
+                }}
+              >
+
+                <span>
+                  EVIDENCE REGISTRY CONTRACT
+                </span>
+
+                <code
+                  style={{
+                    wordBreak:
+                      "break-all",
+                  }}
+                >
+                  {
+                    EVIDENCE_REGISTRY_ADDRESS
+                  }
+                </code>
+
+                <a
+                  href={`${SEPOLIA_EXPLORER}/address/${EVIDENCE_REGISTRY_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="student-view-all"
+                  style={{
+                    display:
+                      "inline-block",
+                    marginTop:
+                      "10px",
+                  }}
+                >
+                  View contract on Sepolia →
+                </a>
+
+              </div>
+
             </div>
 
-            {/* =================================================
-                CRYPTOGRAPHIC PROOF
-                ================================================= */}
+            {/* WHAT THE BLOCKCHAIN PROVES */}
 
             <div className="verifier-section">
 
               <div className="verifier-section-heading">
 
                 <span>
-                  CRYPTOGRAPHIC PROOF
+                  CRYPTOGRAPHIC TRUST MODEL
                 </span>
 
                 <h2>
-                  Issuer Signature
+                  What this verification proves
                 </h2>
 
                 <p>
-                  The signature is checked directly
-                  against the blockchain credential.
+                  The verifier checks the commitment recorded
+                  by the deployed smart contract. The original
+                  project files are not stored on-chain.
                 </p>
 
               </div>
 
-              <div className="verifier-proof-result">
+              <div className="verifier-info-grid">
 
-                <div
-                  className={
-                    signatureValid === true
-                      ? "verifier-proof-icon valid"
-                      : "verifier-proof-icon invalid"
-                  }
+                <div className="verifier-info-item">
+
+                  <span>
+                    COMMITMENT
+                  </span>
+
+                  <strong>
+                    {evidenceExists
+                      ? "FOUND ON-CHAIN"
+                      : "NOT FOUND"}
+                  </strong>
+
+                </div>
+
+                <div className="verifier-info-item">
+
+                  <span>
+                    INTEGRITY ANCHOR
+                  </span>
+
+                  <strong>
+                    Ethereum Sepolia
+                  </strong>
+
+                </div>
+
+                <div className="verifier-info-item">
+
+                  <span>
+                    CURRENT STATUS
+                  </span>
+
+                  <strong>
+                    {evidenceExists
+                      ? evidenceIsActive
+                        ? "ACTIVE"
+                        : "REVOKED"
+                      : "UNKNOWN"}
+                  </strong>
+
+                </div>
+
+                <div className="verifier-info-item">
+
+                  <span>
+                    VERIFICATION MODE
+                  </span>
+
+                  <strong>
+                    READ ONLY
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* EXPLORER */}
+
+            {evidenceExists && (
+
+              <div className="verifier-result-actions">
+
+                <a
+                  href={`${SEPOLIA_EXPLORER}/address/${EVIDENCE_REGISTRY_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="student-view-all"
                 >
+                  Inspect EvidenceRegistry on Sepolia →
+                </a>
 
-                  {signatureValid === true
-                    ? "✓"
-                    : "×"}
-
-                </div>
-
-                <div>
-
-                  <strong>
-
-                    {signatureValid === true
-                      ? "Signature Valid"
-                      : "Signature Invalid"}
-
-                  </strong>
-
-                  <span>
-
-                    {signatureValid === true
-                      ? "The credential was signed by the registered issuer."
-                      : "The issuer signature could not be verified."}
-
-                  </span>
-
-                </div>
+                <button
+                  type="button"
+                  onClick={
+                    resetVerification
+                  }
+                  className="verifier-secondary-button"
+                >
+                  Verify Another
+                </button>
 
               </div>
 
-              <div className="verifier-proof-grid">
-
-                <div className="verifier-proof-field">
-
-                  <span>
-                    ISSUER WALLET
-                  </span>
-
-                  <strong>
-                    {shortenValue(
-                      credential.issuer,
-                    )}
-                  </strong>
-
-                  <code>
-                    {
-                      credential.issuer
-                    }
-                  </code>
-
-                </div>
-
-                <div className="verifier-proof-field">
-
-                  <span>
-                    STUDENT DID
-                  </span>
-
-                  <strong>
-                    {shortenValue(
-                      credential.studentDID,
-                    )}
-                  </strong>
-
-                  <code>
-                    {
-                      credential.studentDID
-                    }
-                  </code>
-
-                </div>
-
-                <div className="verifier-proof-field">
-
-                  <span>
-                    CREDENTIAL HASH
-                  </span>
-
-                  <strong>
-                    {shortenValue(
-                      credential.credentialHash,
-                    )}
-                  </strong>
-
-                  <code>
-                    {
-                      credential.credentialHash
-                    }
-                  </code>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* =================================================
-                IPFS
-                ================================================= */}
-
-            <div className="verifier-section">
-
-              <div className="verifier-section-heading">
-
-                <span>
-                  DECENTRALIZED STORAGE
-                </span>
-
-                <h2>
-                  IPFS Metadata
-                </h2>
-
-              </div>
-
-              <div className="verifier-ipfs">
-
-                <div className="verifier-ipfs-icon">
-                  ◈
-                </div>
-
-                <div>
-
-                  <span>
-                    IPFS CID
-                  </span>
-
-                  <strong>
-                    {
-                      credential.cid ||
-                      "No CID available"
-                    }
-                  </strong>
-
-                  {credential.cid && (
-
-                    <a
-                      href={`https://ipfs.io/ipfs/${credential.cid}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open credential metadata →
-                    </a>
-
-                  )}
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* =================================================
-                VERIFY ANOTHER
-                ================================================= */}
-
-            <div className="verifier-result-actions">
-
-              <button
-                type="button"
-                onClick={
-                  resetVerification
-                }
-                className="verifier-secondary-button"
-              >
-                Verify Another Credential
-              </button>
-
-            </div>
+            )}
 
           </section>
 
         )}
+
+        {/* =================================================
+            CREDENTIAL VERIFICATION
+            ================================================= */}
+
+        {!isEvidenceMode && (
+          <>
+            <section className="verifier-search-card">
+
+              <div className="verifier-search-heading">
+
+                <div className="verifier-search-icon">
+                  ✓
+                </div>
+
+                <div>
+
+                  <h2>
+                    Credential Verification
+                  </h2>
+
+                  <p>
+                    Verify a credential directly from
+                    the EduProof credential registry.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <form
+                onSubmit={
+                  handleCredentialSubmit
+                }
+                className="verifier-form"
+              >
+
+                <label>
+                  CREDENTIAL ID
+                </label>
+
+                <div className="verifier-input-row">
+
+                  <input
+                    type="number"
+                    min="1"
+                    value={
+                      credentialId
+                    }
+                    onChange={(event) =>
+                      setCredentialId(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="e.g. 1"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={
+                      loading
+                    }
+                  >
+                    {loading
+                      ? "Verifying..."
+                      : "Verify Credential"}
+                  </button>
+
+                </div>
+
+              </form>
+
+            </section>
+
+            {error &&
+              !isEvidenceMode && (
+
+              <section className="verifier-error">
+
+                <div className="verifier-error-icon">
+                  !
+                </div>
+
+                <div>
+
+                  <strong>
+                    Verification failed
+                  </strong>
+
+                  <p>
+                    {error}
+                  </p>
+
+                </div>
+
+              </section>
+            )}
+
+            {!loading &&
+              !credential &&
+              !error &&
+              !hasSearched && (
+
+                <section className="verifier-empty">
+
+                  <div className="verifier-empty-icon">
+                    ◇
+                  </div>
+
+                  <h3>
+                    Ready to verify
+                  </h3>
+
+                  <p>
+                    Enter a credential ID or use an
+                    EduProof verification QR code.
+                  </p>
+
+                </section>
+
+              )}
+
+            {credential && (
+
+              <section className="verifier-result">
+
+                <div
+                  className={`verifier-result-banner ${statusClass(
+                    credential.status,
+                  )}`}
+                >
+
+                  <div className="verifier-result-symbol">
+
+                    {isActuallyValid
+                      ? "✓"
+                      : isRevoked
+                        ? "×"
+                        : isSuperseded
+                          ? "↻"
+                          : "!"}
+
+                  </div>
+
+                  <div>
+
+                    <span>
+                      CREDENTIAL VERIFICATION RESULT
+                    </span>
+
+                    <h2>
+
+                      {isActuallyValid
+                        ? "Credential Verified"
+                        : isRevoked
+                          ? "Credential Revoked"
+                          : isSuperseded
+                            ? "Credential Superseded"
+                            : "Credential Status Unknown"}
+
+                    </h2>
+
+                    <p>
+
+                      {isActuallyValid
+                        ? "This credential has a valid issuer signature and is currently active on-chain."
+                        : isRevoked
+                          ? "This credential has been revoked on-chain."
+                          : isSuperseded
+                            ? "This credential has been replaced by a newer version."
+                            : "The credential was found, but could not be fully verified."}
+
+                    </p>
+
+                  </div>
+
+                  <div className="verifier-result-status">
+
+                    {statusText(
+                      credential.status,
+                    )}
+
+                  </div>
+
+                </div>
+
+                <div className="verifier-section">
+
+                  <div className="verifier-section-heading">
+
+                    <span>
+                      CREDENTIAL RECORD
+                    </span>
+
+                    <h2>
+                      {credential.degree}
+                    </h2>
+
+                    <p>
+                      {credential.institution}
+                    </p>
+
+                  </div>
+
+                  <div className="verifier-info-grid">
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        CREDENTIAL ID
+                      </span>
+
+                      <strong>
+                        #{credential.id}
+                      </strong>
+
+                    </div>
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        CREDENTIAL TYPE
+                      </span>
+
+                      <strong>
+                        {
+                          credential.credentialType
+                        }
+                      </strong>
+
+                    </div>
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        ISSUE DATE
+                      </span>
+
+                      <strong>
+                        {formatDate(
+                          credential.issueDate,
+                        )}
+                      </strong>
+
+                    </div>
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        VERSION
+                      </span>
+
+                      <strong>
+                        v{credential.version}
+                      </strong>
+
+                    </div>
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        INSTITUTION ID
+                      </span>
+
+                      <strong>
+                        {
+                          credential.institutionId
+                        }
+                      </strong>
+
+                    </div>
+
+                    <div className="verifier-info-item">
+
+                      <span>
+                        ON-CHAIN STATUS
+                      </span>
+
+                      <strong
+                        className={`verifier-status-text ${statusClass(
+                          credential.status,
+                        )}`}
+                      >
+                        {statusText(
+                          credential.status,
+                        )}
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div className="verifier-section">
+
+                  <div className="verifier-section-heading">
+
+                    <span>
+                      CRYPTOGRAPHIC PROOF
+                    </span>
+
+                    <h2>
+                      Issuer Signature
+                    </h2>
+
+                    <p>
+                      The signature is independently
+                      checked against the blockchain record.
+                    </p>
+
+                  </div>
+
+                  <div className="verifier-proof-result">
+
+                    <div
+                      className={
+                        signatureValid === true
+                          ? "verifier-proof-icon valid"
+                          : "verifier-proof-icon invalid"
+                      }
+                    >
+                      {signatureValid === true
+                        ? "✓"
+                        : "×"}
+                    </div>
+
+                    <div>
+
+                      <strong>
+
+                        {signatureValid === true
+                          ? "Signature Valid"
+                          : "Signature Invalid"}
+
+                      </strong>
+
+                      <span>
+
+                        {signatureValid === true
+                          ? "The credential was signed by the registered issuer."
+                          : "The issuer signature could not be verified."}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  <div className="verifier-proof-grid">
+
+                    <div className="verifier-proof-field">
+
+                      <span>
+                        ISSUER WALLET
+                      </span>
+
+                      <strong>
+                        {shortenValue(
+                          credential.issuer,
+                        )}
+                      </strong>
+
+                      <code>
+                        {
+                          credential.issuer
+                        }
+                      </code>
+
+                    </div>
+
+                    <div className="verifier-proof-field">
+
+                      <span>
+                        STUDENT DID
+                      </span>
+
+                      <strong>
+                        {shortenValue(
+                          credential.studentDID,
+                        )}
+                      </strong>
+
+                      <code>
+                        {
+                          credential.studentDID
+                        }
+                      </code>
+
+                    </div>
+
+                    <div className="verifier-proof-field">
+
+                      <span>
+                        CREDENTIAL HASH
+                      </span>
+
+                      <strong>
+                        {shortenValue(
+                          credential.credentialHash,
+                        )}
+                      </strong>
+
+                      <code>
+                        {
+                          credential.credentialHash
+                        }
+                      </code>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div className="verifier-section">
+
+                  <div className="verifier-section-heading">
+
+                    <span>
+                      DECENTRALIZED STORAGE
+                    </span>
+
+                    <h2>
+                      IPFS Metadata
+                    </h2>
+
+                  </div>
+
+                  <div className="verifier-ipfs">
+
+                    <div className="verifier-ipfs-icon">
+                      ◈
+                    </div>
+
+                    <div>
+
+                      <span>
+                        IPFS CID
+                      </span>
+
+                      <strong>
+                        {
+                          credential.cid ||
+                          "No CID available"
+                        }
+                      </strong>
+
+                      {credential.cid && (
+
+                        <a
+                          href={`https://ipfs.io/ipfs/${credential.cid}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open credential metadata →
+                        </a>
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div className="verifier-result-actions">
+
+                  <button
+                    type="button"
+                    onClick={
+                      resetVerification
+                    }
+                    className="verifier-secondary-button"
+                  >
+                    Verify Another
+                  </button>
+
+                </div>
+
+              </section>
+
+            )}
+          </>
+        )}
+
+        {/* =================================================
+            TRUST MODEL
+            ================================================= */}
+
+        <section
+          className="student-panel"
+          style={{
+            marginTop:
+              "24px",
+          }}
+        >
+
+          <div className="student-panel-header">
+
+            <div>
+
+              <span>
+                TRUST MODEL
+              </span>
+
+              <h2>
+                Verification without blind trust
+              </h2>
+
+              <p>
+                EduProof reads the blockchain commitment
+                directly instead of asking the verifier
+                to trust a screenshot or centralized database.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="student-credential-grid">
+
+            <div className="student-credential-card">
+
+              <h3>
+                01. Cryptographic Hash
+              </h3>
+
+              <p>
+                Evidence is represented by a deterministic
+                cryptographic commitment.
+              </p>
+
+            </div>
+
+            <div className="student-credential-card">
+
+              <h3>
+                02. Ethereum Sepolia
+              </h3>
+
+              <p>
+                The commitment is anchored in the deployed
+                EvidenceRegistry smart contract.
+              </p>
+
+            </div>
+
+            <div className="student-credential-card">
+
+              <h3>
+                03. Public Verification
+              </h3>
+
+              <p>
+                Anyone with the verification link or QR
+                can perform a read-only blockchain check.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <div
+          style={{
+            textAlign:
+              "center",
+            marginTop:
+              "28px",
+          }}
+        >
+
+          <Link
+            to="/"
+            className="student-back-link"
+          >
+            ← Return to EduProof
+          </Link>
+
+        </div>
 
       </main>
 
