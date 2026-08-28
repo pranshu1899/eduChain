@@ -7,8 +7,12 @@ import { Link } from "react-router-dom";
 
 import {
   createHackathonOrganizationRequest,
-  getHackathonOrganizationByWallet,
 } from "../../services/hackathonOrganizationService";
+
+import {
+  getHackathonOrganizationOnChain,
+  requestHackathonOrganization,
+} from "../../services/hackathonAccessService";
 
 function getEthereum() {
   return (
@@ -113,14 +117,7 @@ export default function RequestHackathon() {
 
       setWallet(address);
 
-      const existing =
-        getHackathonOrganizationByWallet(
-          address,
-        );
-
-      setExistingStatus(
-        existing ? "APPROVED" : null,
-      );
+      await updateStatusFromAddress(address);
     } catch (err) {
       setError(
         err instanceof Error
@@ -129,6 +126,25 @@ export default function RequestHackathon() {
       );
     } finally {
       setConnecting(false);
+    }
+  }
+
+  async function updateStatusFromAddress(address: string) {
+    try {
+      const onChain = await getHackathonOrganizationOnChain(address);
+      if (onChain) {
+        if (onChain.status === 2) {
+          setExistingStatus("APPROVED");
+          return;
+        } else if (onChain.status === 1) {
+          setExistingStatus("PENDING");
+          return;
+        }
+      }
+      setExistingStatus(null);
+    } catch (err) {
+      console.error("Unable to verify on-chain status:", err);
+      setExistingStatus(null);
     }
   }
 
@@ -161,14 +177,7 @@ export default function RequestHackathon() {
           return;
         }
 
-        const existing =
-          getHackathonOrganizationByWallet(
-            address,
-          );
-
-        setExistingStatus(
-          existing ? "APPROVED" : null,
-        );
+        void updateStatusFromAddress(address);
       };
 
     ethereum.request({
@@ -205,6 +214,10 @@ export default function RequestHackathon() {
         );
       }
 
+      // First submit on-chain
+      await requestHackathonOrganization(organizationName);
+
+      // Then save metadata to localStorage
       const request =
         createHackathonOrganizationRequest({
           organizationName,

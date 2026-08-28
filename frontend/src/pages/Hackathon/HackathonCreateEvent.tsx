@@ -20,8 +20,8 @@ import {
 } from "../../services/hackathonService";
 
 import {
-  getHackathonOrganizationByWallet,
-} from "../../services/hackathonOrganizationService";
+  getHackathonOrganizationOnChain,
+} from "../../services/hackathonAccessService";
 
 import HackathonLayout from "./HackathonLayout";
 
@@ -110,27 +110,30 @@ export default function HackathonCreateEvent() {
         await signer.getAddress();
 
       const organization =
-        getHackathonOrganizationByWallet(
+        await getHackathonOrganizationOnChain(
           wallet,
         );
 
-      if (!organization) {
+      if (!organization || organization.status === 0) {
         throw new Error(
           "No organization application was found for this wallet.",
         );
       }
 
       if (
-        organization.status !==
-        "APPROVED"
+        organization.status !== 2
       ) {
         throw new Error(
           "Your hackathon organization must be approved by an admin before you can create events.",
         );
       }
 
+      // We still need an organization ID for creating the hackathon locally,
+      // but the blockchain doesn't have an ID string. We can use the wallet address
+      // as the ID, or read the local storage for the UUID if it exists.
+      // Actually, since HackathonCreateEvent just needs an ID, we'll use wallet.
       setOrganizationId(
-        organization.id,
+        wallet,
       );
 
       setOrganizationWallet(

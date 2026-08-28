@@ -1,9 +1,6 @@
-import type { ReactNode } from "react";
-
-import {
-  NavLink,
-  useNavigate,
-} from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { getConnectedHackathonWallet, getHackathonOrganizationOnChain } from "../../services/hackathonAccessService";
 
 interface HackathonLayoutProps {
   children: ReactNode;
@@ -12,41 +9,39 @@ interface HackathonLayoutProps {
 export default function HackathonLayout({
   children,
 }: HackathonLayoutProps) {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+  const [wallet, setWallet] = useState("");
+  const [orgName, setOrgName] = useState("");
 
-  function navClass({
-    isActive,
-  }: {
-    isActive: boolean;
-  }) {
-    return isActive
-      ? "hackathon-nav-link active"
-      : "hackathon-nav-link";
+  useEffect(() => {
+    async function init() {
+      try {
+        const w = await getConnectedHackathonWallet();
+        if (w) {
+          setWallet(w);
+          const org = await getHackathonOrganizationOnChain(w);
+          if (org) {
+            setOrgName(org.organizationName);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load layout data", err);
+      }
+    }
+    void init();
+  }, []);
+
+  function navClass({ isActive }: { isActive: boolean }) {
+    return isActive ? "student-nav-item active" : "student-nav-item";
   }
 
   return (
-    <div className="student-page-shell">
-      <aside
-        style={{
-          width: "270px",
-          minWidth: "270px",
-          minHeight: "100vh",
-          padding: "1.5rem",
-          borderRight:
-            "1px solid rgba(255,255,255,0.08)",
-          position: "sticky",
-          top: 0,
-          alignSelf: "flex-start",
-        }}
-      >
+    <div className="student-shell">
+      <aside className="student-sidebar">
         {/* BRAND */}
-
         <button
           type="button"
-          onClick={() =>
-            navigate("/")
-          }
+          onClick={() => navigate("/")}
           style={{
             border: "none",
             background: "transparent",
@@ -56,225 +51,89 @@ export default function HackathonLayout({
             color: "inherit",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-            }}
-          >
-            <div
-              style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "12px",
-                display: "grid",
-                placeItems: "center",
-                border:
-                  "1px solid rgba(130,100,255,0.6)",
-                background:
-                  "rgba(110,80,255,0.12)",
-                fontWeight: 800,
-                fontSize: "1.25rem",
-              }}
-            >
-              E
-            </div>
-
+          <div className="student-brand">
+            <div className="student-brand-mark">E</div>
             <div>
-              <strong
-                style={{
-                  display: "block",
-                  fontSize: "1.05rem",
-                }}
-              >
-                EduProof
-              </strong>
-
-              <span
-                style={{
-                  opacity: 0.55,
-                  fontSize: "0.7rem",
-                }}
-              >
-                Academic Credential Network
-              </span>
+              <div className="student-brand-name">EduProof</div>
+              <div className="student-brand-subtitle">Academic Credential Network</div>
             </div>
           </div>
         </button>
 
-        {/* PORTAL TITLE */}
-
-        <div
-          style={{
-            marginTop: "2.5rem",
-            marginBottom: "1rem",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.7rem",
-              letterSpacing: "0.14em",
-              opacity: 0.5,
-            }}
-          >
-            HACKATHON NETWORK
-          </p>
-
-          <h2
-            style={{
-              marginTop: "0.4rem",
-              fontSize: "1rem",
-            }}
-          >
-            Organization Portal
-          </h2>
+        {/* IDENTITY */}
+        <div style={{ marginTop: "36px", padding: "0 8px", marginBottom: "24px" }}>
+          <div style={{ color: "#8e87ff", fontSize: "9px", fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase" }}>
+            Approved Organization
+          </div>
+          <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 700, color: "#f5f7ff", opacity: 0.9 }}>
+            Hackathon Network
+          </div>
         </div>
+
+        <div style={{ padding: "0 8px", marginBottom: "32px" }}>
+          <div style={{ color: "rgba(245,247,255,0.45)", fontSize: "10px", marginBottom: "4px" }}>
+            Organization
+          </div>
+          <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "16px", color: "#f5f7ff", wordBreak: "break-word" }}>
+            {orgName || "Loading..."}
+          </div>
+
+          <div style={{ color: "rgba(245,247,255,0.45)", fontSize: "10px", marginBottom: "4px" }}>
+            Connected wallet
+          </div>
+          <div style={{ fontFamily: "monospace", color: "#aaa5ff", fontSize: "11px", marginBottom: "16px" }}>
+            {wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "..."}
+          </div>
+
+          <div className="student-network-card" style={{ marginTop: "8px", padding: "10px 12px" }}>
+            <div className="student-network-dot" style={{ width: "6px", height: "6px", flexShrink: 0 }}></div>
+            <div>
+              <strong style={{ fontSize: "10px", color: "#f5f7ff" }}>Blockchain Secured</strong>
+              <span style={{ marginTop: "2px", fontSize: "9px", color: "rgba(245,247,255,0.5)" }}>Ethereum Sepolia</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="student-portal-label" style={{ marginTop: 0 }}>OVERVIEW</div>
 
         {/* NAVIGATION */}
-
-        <nav
-          style={{
-            display: "grid",
-            gap: "0.35rem",
-          }}
-        >
-          <NavLink
-            to="/hackathon"
-            end
-            className={navClass}
-          >
-            <span>⌂</span>
-            Overview
+        <nav className="student-navigation">
+          <NavLink to="/hackathon" end className={navClass}>
+            <span className="student-nav-icon">⌂</span>
+            Hackathons
           </NavLink>
-
-          <NavLink
-            to="/hackathon/create"
-            className={navClass}
-          >
-            <span>＋</span>
-            Create Hackathon
-          </NavLink>
+          <div className="student-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
+            <span className="student-nav-icon">👥</span>
+            Participants
+          </div>
+          <div className="student-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
+            <span className="student-nav-icon">🔐</span>
+            Certificate Batches
+          </div>
         </nav>
 
-        {/* INFO */}
-
-        <div
-          style={{
-            marginTop: "2rem",
-            padding: "1rem",
-            borderRadius: "14px",
-            border:
-              "1px solid rgba(255,255,255,0.08)",
-            background:
-              "rgba(255,255,255,0.025)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              marginBottom: "0.5rem",
-            }}
-          >
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#4ade80",
-                boxShadow:
-                  "0 0 10px rgba(74,222,128,0.8)",
-              }}
-            />
-
-            <strong
-              style={{
-                fontSize: "0.8rem",
-              }}
-            >
-              Blockchain Secured
-            </strong>
-          </div>
-
-          <p
-            style={{
-              margin: 0,
-              opacity: 0.55,
-              fontSize: "0.72rem",
-            }}
-          >
-            Ethereum Sepolia Network
-          </p>
-        </div>
-
         {/* BACK */}
-
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/")
-          }
-          style={{
-            marginTop: "1.5rem",
-            width: "100%",
-          }}
-        >
-          ← Change Role
-        </button>
+        <div className="student-sidebar-bottom">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="student-change-role"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+              width: "100%",
+              padding: "10px",
+            }}
+          >
+            ← Change Role
+          </button>
+        </div>
       </aside>
 
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <header
-          style={{
-            height: "84px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            padding: "0 2rem",
-            borderBottom:
-              "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.75rem",
-            }}
-          >
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#4ade80",
-              }}
-            />
-
-            <span
-              style={{
-                fontSize: "0.85rem",
-                opacity: 0.8,
-              }}
-            >
-              Ethereum Sepolia
-            </span>
-          </div>
-        </header>
-
-        <main
-          style={{
-            width: "100%",
-          }}
-        >
+      <div className="student-main">
+        <main className="student-content">
           {children}
         </main>
       </div>

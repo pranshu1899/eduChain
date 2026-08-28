@@ -18,8 +18,8 @@ import {
 } from "../../services/hackathonService";
 
 import {
-  getHackathonOrganizationByWallet,
-} from "../../services/hackathonOrganizationService";
+  getHackathonOrganizationOnChain,
+} from "../../services/hackathonAccessService";
 
 import type {
   HackathonEvent,
@@ -28,10 +28,7 @@ import type {
 import HackathonLayout from "./HackathonLayout";
 
 export default function HackathonDashboard() {
-  const [
-    wallet,
-    setWallet,
-  ] = useState("");
+
 
   const [
     hackathons,
@@ -85,30 +82,30 @@ export default function HackathonDashboard() {
       const address =
         await signer.getAddress();
 
-      setWallet(address);
 
-      const organization =
-        getHackathonOrganizationByWallet(
+
+      const onChainOrg =
+        await getHackathonOrganizationOnChain(
           address,
         );
 
-      if (!organization) {
+      if (!onChainOrg || onChainOrg.status === 0) {
         throw new Error(
           "No hackathon organization application exists for this wallet.",
         );
       }
 
       if (
-        organization.status !==
-        "APPROVED"
+        onChainOrg.status !== 2
       ) {
+        const statusStr = onChainOrg.status === 1 ? "PENDING" : onChainOrg.status === 3 ? "REJECTED" : onChainOrg.status === 4 ? "REVOKED" : "UNKNOWN";
         throw new Error(
-          `Organization access is ${organization.status.toLowerCase()}. Admin approval is required.`,
+          `Organization access is ${statusStr.toLowerCase()}. Admin approval is required.`,
         );
       }
 
       setOrganizationName(
-        organization.organizationName,
+        onChainOrg.organizationName,
       );
 
       const organizationHackathons =
@@ -210,260 +207,110 @@ export default function HackathonDashboard() {
 
         {/* HEADER */}
 
-        <section
-          style={{
-            marginBottom: "2rem",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              opacity: 0.55,
-              fontSize: "0.75rem",
-              letterSpacing: "0.14em",
-            }}
-          >
-            APPROVED ORGANIZATION
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "flex-start",
-              gap: "1rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <h1>
-                {organizationName}
-              </h1>
-
-              <p>
-                Create hackathons, register
-                students, and issue
-                cryptographically verifiable
-                certificates.
-              </p>
-            </div>
-
-            <Link
-              to="/hackathon/create"
-            >
+        <section className="student-page-header">
+          <div>
+            <div className="student-page-eyebrow">HACKATHON ORGANIZATION</div>
+            <h1>{organizationName}</h1>
+            <p>
+              Create hackathons, register students, and issue cryptographically verifiable certificates.
+            </p>
+          </div>
+          <div>
+            <Link to="/hackathon/create" className="student-connect-large" style={{ textDecoration: "none", display: "inline-block" }}>
               + Create Hackathon
             </Link>
           </div>
-
-          <div
-            style={{
-              marginTop: "0.75rem",
-              opacity: 0.55,
-              fontSize: "0.75rem",
-              wordBreak: "break-all",
-            }}
-          >
-            Connected wallet: {wallet}
-          </div>
         </section>
 
-        {/* STATS */}
+        {/* OVERVIEW STATS */}
 
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "1rem",
-            marginBottom: "2rem",
-          }}
-        >
-          <div className="dashboard-card">
-            <p>Hackathons</p>
-            <h2>
-              {hackathons.length}
-            </h2>
+        <section style={{ marginBottom: "48px" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "24px", margin: "0 0 4px", fontFamily: "'Space Grotesk', sans-serif" }}>Overview</h2>
+            <p style={{ margin: 0, color: "rgba(245,247,255,0.4)", fontSize: "13px" }}>Your hackathon network at a glance.</p>
           </div>
 
-          <div className="dashboard-card">
-            <p>Participants</p>
-            <h2>
-              {totalParticipants}
-            </h2>
-          </div>
+          <div className="student-stat-grid">
+            <div className="student-stat-card purple">
+              <span>HACKATHONS</span>
+              <strong>{hackathons.length}</strong>
+              <p>Total events</p>
+            </div>
 
-          <div className="dashboard-card">
-            <p>Certificate Batches</p>
-            <h2>
-              {totalBatches}
-            </h2>
+            <div className="student-stat-card green">
+              <span>PARTICIPANTS</span>
+              <strong>{totalParticipants}</strong>
+              <p>Total registered</p>
+            </div>
+
+            <div className="student-stat-card yellow">
+              <span>CERT BATCHES</span>
+              <strong>{totalBatches}</strong>
+              <p>Merkle roots</p>
+            </div>
           </div>
         </section>
 
         {/* EVENTS */}
 
         <section>
-          <div
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  margin: 0,
-                  opacity: 0.55,
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.12em",
-                }}
-              >
-                EVENTS
-              </p>
-
-              <h2>
-                My Hackathons
-              </h2>
-            </div>
-
-            <Link
-              to="/hackathon/create"
-            >
-              Create →
-            </Link>
+          <div style={{ marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "24px", margin: "0 0 4px", fontFamily: "'Space Grotesk', sans-serif" }}>My Hackathons</h2>
+            <p style={{ margin: 0, color: "rgba(245,247,255,0.4)", fontSize: "13px" }}>Manage your existing hackathon events and their certificate lifecycle.</p>
           </div>
 
-          {hackathons.length ===
-          0 ? (
-            <div className="dashboard-card">
-              <h2>
-                No hackathons yet
-              </h2>
-
-              <p>
-                Create your first event to
-                start registering students
-                and issuing certificates.
-              </p>
-
-              <Link
-                to="/hackathon/create"
-              >
+          {hackathons.length === 0 ? (
+            <div className="student-empty">
+              <div className="student-empty-icon">📅</div>
+              <h3>No hackathons yet</h3>
+              <p>Create your first event to start registering students and issuing certificates.</p>
+              <Link to="/hackathon/create" style={{ color: "#9c96ff", textDecoration: "none", fontSize: "12px", fontWeight: 700, marginTop: "8px" }}>
                 Create your first hackathon →
               </Link>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(300px, 1fr))",
-                gap: "1rem",
-              }}
-            >
-              {hackathons.map(
-                (hackathon) => {
-                  const participantCount =
-                    getHackathonParticipants(
-                      hackathon.id,
-                    ).length;
+            <div className="student-credential-grid">
+              {hackathons.map((hackathon) => {
+                const participantCount = getHackathonParticipants(hackathon.id).length;
+                const batches = getHackathonBatches().filter((batch) => batch.hackathonId === hackathon.id);
+                const latestBatch = batches[0];
 
-                  const batches =
-                    getHackathonBatches().filter(
-                      (batch) =>
-                        batch.hackathonId ===
-                        hackathon.id,
-                    );
-
-                  const latestBatch =
-                    batches[0];
-
-                  return (
-                    <article
-                      className="dashboard-card"
-                      key={
-                        hackathon.id
-                      }
-                    >
-                      <p
-                        style={{
-                          opacity: 0.55,
-                          fontSize: "0.7rem",
-                          letterSpacing:
-                            "0.1em",
-                        }}
-                      >
-                        HACKATHON
-                      </p>
-
-                      <h2>
-                        {hackathon.name}
-                      </h2>
-
-                      <p>
-                        {hackathon.description}
-                      </p>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gap: "0.4rem",
-                          margin:
-                            "1rem 0",
-                          opacity: 0.7,
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        <span>
-                          📅{" "}
-                          {hackathon.eventDate}
-                        </span>
-
-                        <span>
-                          👥{" "}
-                          {participantCount}{" "}
-                          participant
-                          {participantCount ===
-                          1
-                            ? ""
-                            : "s"}
-                        </span>
-
-                        <span>
-                          🔐{" "}
-                          {latestBatch
-                            ? latestBatch.status
-                            : "No certificate batch"}
-                        </span>
+                return (
+                  <article className="student-credential-card" key={hackathon.id} style={{ display: "flex", flexDirection: "column" }}>
+                    <div className="student-credential-top">
+                      <span>HACKATHON</span>
+                      <div className={`student-status ${latestBatch ? 'active' : ''}`}>
+                        <span></span>
+                        {latestBatch ? latestBatch.status : "No batch"}
                       </div>
+                    </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.6rem",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <Link
-                          to={`/hackathon/${hackathon.id}/participants`}
-                        >
-                          Participants →
-                        </Link>
+                    <h3>{hackathon.name}</h3>
+                    <p style={{ flex: 1, marginBottom: "16px" }}>{hackathon.description}</p>
 
-                        <Link
-                          to={`/hackathon/${hackathon.id}/certificates`}
-                        >
-                          Certificates →
-                        </Link>
+                    <div className="student-credential-details" style={{ marginTop: "auto" }}>
+                      <div>
+                        <span>DATE</span>
+                        <strong>{hackathon.eventDate}</strong>
                       </div>
-                    </article>
-                  );
-                },
-              )}
+                      <div>
+                        <span>PEOPLE</span>
+                        <strong>{participantCount}</strong>
+                      </div>
+                      <div>
+                        <span>VENUE</span>
+                        <strong>{hackathon.venue || "TBD"}</strong>
+                      </div>
+                    </div>
+
+                    <div className="student-card-action">
+                      <Link to={`/hackathon/${hackathon.id}/participants`} style={{ color: "inherit", textDecoration: "none" }}>
+                        Manage Event →
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

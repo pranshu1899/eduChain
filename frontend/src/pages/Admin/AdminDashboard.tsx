@@ -18,6 +18,11 @@ import {
   rejectHackathonOrganizationRequest,
 } from "../../services/hackathonOrganizationService";
 
+import {
+  approveHackathonOrganization,
+  rejectHackathonOrganization,
+} from "../../services/hackathonAccessService";
+
 import type {
   HackathonOrganizationRequest,
 } from "../../types/hackathon";
@@ -317,7 +322,7 @@ export default function AdminDashboard() {
      APPROVE HACKATHON ORGANIZATION
      ===================================================== */
 
-  function handleApproveHackathonOrganization(
+  async function handleApproveHackathonOrganization(
     request: HackathonOrganizationRequest,
   ) {
     try {
@@ -328,6 +333,16 @@ export default function AdminDashboard() {
       setError("");
       setMessage("");
 
+      // 1. Approve on-chain first
+      const tx = await approveHackathonOrganization(
+        request.walletAddress,
+      );
+      
+      if (!tx) {
+        throw new Error("Transaction was not confirmed.");
+      }
+
+      // 2. Update local metadata cache
       const approved =
         approveHackathonOrganizationRequest(
           request.id,
@@ -361,7 +376,7 @@ export default function AdminDashboard() {
      REJECT HACKATHON ORGANIZATION
      ===================================================== */
 
-  function handleRejectHackathonOrganization(
+  async function handleRejectHackathonOrganization(
     request: HackathonOrganizationRequest,
   ) {
     try {
@@ -372,6 +387,16 @@ export default function AdminDashboard() {
       setError("");
       setMessage("");
 
+      // 1. Reject on-chain first
+      const tx = await rejectHackathonOrganization(
+        request.walletAddress,
+      );
+
+      if (!tx) {
+        throw new Error("Transaction was not confirmed.");
+      }
+
+      // 2. Update local metadata cache
       const rejected =
         rejectHackathonOrganizationRequest(
           request.id,
@@ -1555,7 +1580,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleApproveHackathonOrganization(
+                            void handleApproveHackathonOrganization(
                               request,
                             )
                           }
@@ -1595,7 +1620,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleRejectHackathonOrganization(
+                            void handleRejectHackathonOrganization(
                               request,
                             )
                           }

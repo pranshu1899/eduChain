@@ -123,6 +123,26 @@ export default function HackathonGuard({
 
   useEffect(() => {
     void checkAuthorization();
+
+    if (!window.ethereum) {
+      return;
+    }
+
+    const handleAccountsChanged = () => {
+      void checkAuthorization();
+    };
+
+    const handleChainChanged = () => {
+      window.location.reload();
+    };
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    window.ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged);
+      window.ethereum?.removeListener("chainChanged", handleChainChanged);
+    };
   }, []);
 
   async function handleConnect() {
