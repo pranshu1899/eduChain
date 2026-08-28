@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -11,39 +12,144 @@ import {
 } from "react-router-dom";
 
 import {
+  BrowserProvider,
+} from "ethers";
+
+import {
   createHackathon,
 } from "../../services/hackathonService";
+
+import {
+  getHackathonOrganizationByWallet,
+} from "../../services/hackathonOrganizationService";
+
+import HackathonLayout from "./HackathonLayout";
 
 export default function HackathonCreateEvent() {
   const navigate =
     useNavigate();
 
-  const [name, setName] =
-    useState("");
+  const [
+    organizationId,
+    setOrganizationId,
+  ] = useState("");
 
-  const [description, setDescription] =
-    useState("");
+  const [
+    organizationWallet,
+    setOrganizationWallet,
+  ] = useState("");
 
-  const [eventDate, setEventDate] =
-    useState("");
+  const [
+    organizationName,
+    setOrganizationName,
+  ] = useState("");
 
-  const [venue, setVenue] =
-    useState("");
+  const [
+    name,
+    setName,
+  ] = useState("");
 
-  const [website, setWebsite] =
-    useState("");
+  const [
+    description,
+    setDescription,
+  ] = useState("");
 
-  const [organizationId, setOrganizationId] =
-    useState("");
+  const [
+    eventDate,
+    setEventDate,
+  ] = useState("");
 
-  const [organizationWallet, setOrganizationWallet] =
-    useState("");
+  const [
+    venue,
+    setVenue,
+  ] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [
+    website,
+    setWebsite,
+  ] = useState("");
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  useEffect(() => {
+    void loadOrganization();
+  }, []);
+
+  async function loadOrganization() {
+    try {
+      if (
+        !window.ethereum
+      ) {
+        throw new Error(
+          "MetaMask is required.",
+        );
+      }
+
+      const provider =
+        new BrowserProvider(
+          window.ethereum,
+        );
+
+      const signer =
+        await provider.getSigner();
+
+      const wallet =
+        await signer.getAddress();
+
+      const organization =
+        getHackathonOrganizationByWallet(
+          wallet,
+        );
+
+      if (!organization) {
+        throw new Error(
+          "No organization application was found for this wallet.",
+        );
+      }
+
+      if (
+        organization.status !==
+        "APPROVED"
+      ) {
+        throw new Error(
+          "Your hackathon organization must be approved by an admin before you can create events.",
+        );
+      }
+
+      setOrganizationId(
+        organization.id,
+      );
+
+      setOrganizationWallet(
+        wallet,
+      );
+
+      setOrganizationName(
+        organization.organizationName,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load organization.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -80,16 +186,31 @@ export default function HackathonCreateEvent() {
     }
   }
 
+  if (loading) {
+    return (
+      <HackathonLayout>
+        <div className="student-main-content">
+          <p>
+            Loading organization...
+          </p>
+        </div>
+      </HackathonLayout>
+    );
+  }
+
   return (
-    <div className="student-page-shell">
+    <HackathonLayout>
       <main className="student-main-content">
+
         <button
           type="button"
           onClick={() =>
-            navigate("/hackathon")
+            navigate(
+              "/hackathon",
+            )
           }
         >
-          ← Back
+          ← Back to Portal
         </button>
 
         <div
@@ -105,7 +226,7 @@ export default function HackathonCreateEvent() {
               letterSpacing: "0.12em",
             }}
           >
-            HACKATHON ORGANIZATION
+            EVENT MANAGEMENT
           </p>
 
           <h1>
@@ -113,19 +234,54 @@ export default function HackathonCreateEvent() {
           </h1>
 
           <p>
-            Create an event before adding
-            participants and generating
-            certificates.
+            {organizationName
+              ? `Create an event for ${organizationName}.`
+              : "Create an event before registering participants."}
           </p>
         </div>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           className="dashboard-card"
           style={{
             maxWidth: "760px",
           }}
         >
+          {/* AUTO-RESOLVED ORGANIZATION */}
+
+          <div
+            style={{
+              padding: "1rem",
+              marginBottom: "1.25rem",
+              borderRadius: "12px",
+              border:
+                "1px solid rgba(74,222,128,0.25)",
+              background:
+                "rgba(74,222,128,0.05)",
+            }}
+          >
+            <strong>
+              ✓ Approved Organization
+            </strong>
+
+            <p
+              style={{
+                margin:
+                  "0.35rem 0 0",
+                opacity: 0.65,
+                fontSize: "0.8rem",
+                wordBreak:
+                  "break-all",
+              }}
+            >
+              {organizationName}
+              <br />
+              {organizationWallet}
+            </p>
+          </div>
+
           <div
             style={{
               display: "grid",
@@ -133,35 +289,8 @@ export default function HackathonCreateEvent() {
             }}
           >
             <label>
-              Organization ID
-              <input
-                value={organizationId}
-                onChange={(event) =>
-                  setOrganizationId(
-                    event.target.value,
-                  )
-                }
-                placeholder="Your approved organization ID"
-                required
-              />
-            </label>
-
-            <label>
-              Organization Wallet
-              <input
-                value={organizationWallet}
-                onChange={(event) =>
-                  setOrganizationWallet(
-                    event.target.value,
-                  )
-                }
-                placeholder="0x..."
-                required
-              />
-            </label>
-
-            <label>
               Hackathon Name
+
               <input
                 value={name}
                 onChange={(event) =>
@@ -176,8 +305,11 @@ export default function HackathonCreateEvent() {
 
             <label>
               Description
+
               <textarea
-                value={description}
+                value={
+                  description
+                }
                 onChange={(event) =>
                   setDescription(
                     event.target.value,
@@ -191,9 +323,12 @@ export default function HackathonCreateEvent() {
 
             <label>
               Event Date
+
               <input
                 type="date"
-                value={eventDate}
+                value={
+                  eventDate
+                }
                 onChange={(event) =>
                   setEventDate(
                     event.target.value,
@@ -205,6 +340,7 @@ export default function HackathonCreateEvent() {
 
             <label>
               Venue
+
               <input
                 value={venue}
                 onChange={(event) =>
@@ -218,6 +354,7 @@ export default function HackathonCreateEvent() {
 
             <label>
               Website
+
               <input
                 type="url"
                 value={website}
@@ -235,7 +372,8 @@ export default function HackathonCreateEvent() {
                 role="alert"
                 style={{
                   padding: "0.9rem",
-                  borderRadius: "0.75rem",
+                  borderRadius:
+                    "0.75rem",
                 }}
               >
                 {error}
@@ -253,6 +391,6 @@ export default function HackathonCreateEvent() {
           </div>
         </form>
       </main>
-    </div>
+    </HackathonLayout>
   );
 }

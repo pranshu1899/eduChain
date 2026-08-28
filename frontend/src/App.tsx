@@ -43,7 +43,7 @@ import StudentAchievementCreate from "./pages/Student/StudentAchievementCreate";
 import StudentAchievementDetails from "./pages/Student/StudentAchievementDetails";
 
 /* =====================================================
-   PUBLIC VERIFIER
+   VERIFIER
    ===================================================== */
 
 import VerifierPage from "./pages/Verifier/VerifierPage";
@@ -55,18 +55,20 @@ import VerifierPage from "./pages/Verifier/VerifierPage";
 import RequestIssuer from "./pages/RequestIssuer";
 
 /* =====================================================
-   HACKATHON ORGANIZATION APPLICATION
+   HACKATHON APPLICATION
    ===================================================== */
 
 import RequestHackathon from "./pages/RequestHackathon/RequestHackathon";
 
 /* =====================================================
-   HACKATHON ORGANIZATION PORTAL
+   HACKATHON PORTAL
    ===================================================== */
 
 import HackathonDashboard from "./pages/Hackathon/HackathonDashboard";
 import HackathonCreateEvent from "./pages/Hackathon/HackathonCreateEvent";
 import HackathonParticipants from "./pages/Hackathon/HackathonParticipants";
+import HackathonCertificates from "./pages/Hackathon/HackathonCertificates";
+import HackathonGuard from "./pages/Hackathon/HackathonGuard";
 
 /* =====================================================
    ADMIN
@@ -81,12 +83,14 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 function LandingPage() {
   return (
     <div className="landing-page">
+
       {/* =================================================
           HEADER
           ================================================= */}
 
       <header className="landing-header">
         <div className="brand">
+
           <div className="brand-mark">
             E
           </div>
@@ -100,6 +104,7 @@ function LandingPage() {
               Decentralized Academic Credentials
             </div>
           </div>
+
         </div>
       </header>
 
@@ -108,6 +113,7 @@ function LandingPage() {
           ================================================= */}
 
       <main className="landing-main">
+
         <div className="landing-eyebrow">
           EDUPROOF PLATFORM
         </div>
@@ -127,6 +133,7 @@ function LandingPage() {
         </p>
 
         <div className="role-grid">
+
           {/* =================================================
               UNIVERSITY
               ================================================= */}
@@ -229,7 +236,7 @@ function LandingPage() {
           </Link>
 
           {/* =================================================
-              UNIVERSITY ISSUER APPLICATION
+              UNIVERSITY APPLICATION
               ================================================= */}
 
           <Link
@@ -263,11 +270,11 @@ function LandingPage() {
           </Link>
 
           {/* =================================================
-              HACKATHON ORGANIZATION APPLICATION
+              HACKATHON ORGANIZATION
               ================================================= */}
 
           <Link
-            to="/request-hackathon"
+            to="/hackathon"
             className="role-card student"
           >
             <div className="role-icon">
@@ -279,18 +286,17 @@ function LandingPage() {
             </div>
 
             <h2>
-              Become a Hackathon Organization
+              Hackathon Organization
             </h2>
 
             <p>
-              Apply to issue batch-verified
-              hackathon certificates using
-              EduProof's cryptographic
-              infrastructure.
+              Manage hackathons, participants
+              and batch-verified certificates
+              secured by a Merkle root.
             </p>
 
             <div className="role-action">
-              Apply for Authorization
+              Open Hackathon Portal
               <span>
                 →
               </span>
@@ -330,6 +336,7 @@ function LandingPage() {
               </span>
             </div>
           </Link>
+
         </div>
       </main>
     </div>
@@ -343,6 +350,7 @@ function LandingPage() {
 function App() {
   return (
     <BrowserRouter>
+
       <Routes>
 
         {/* =================================================
@@ -357,7 +365,7 @@ function App() {
         />
 
         {/* =================================================
-            UNIVERSITY ISSUER APPLICATION
+            UNIVERSITY APPLICATION
             ================================================= */}
 
         <Route
@@ -368,7 +376,7 @@ function App() {
         />
 
         {/* =================================================
-            HACKATHON ORGANIZATION APPLICATION
+            HACKATHON APPLICATION
             ================================================= */}
 
         <Route
@@ -474,20 +482,12 @@ function App() {
           }
         />
 
-        {/* =================================================
-            MY EVIDENCE
-            ================================================= */}
-
         <Route
           path="/student/evidence"
           element={
             <StudentEvidence />
           }
         />
-
-        {/* =================================================
-            EVIDENCE CREATION
-            ================================================= */}
 
         <Route
           path="/student/evidence-test"
@@ -521,10 +521,6 @@ function App() {
           }
         />
 
-        {/* =================================================
-            STUDENT FALLBACK
-            ================================================= */}
-
         <Route
           path="/student/*"
           element={
@@ -539,21 +535,36 @@ function App() {
         <Route
           path="/hackathon"
           element={
-            <HackathonDashboard />
+            <HackathonGuard>
+              <HackathonDashboard />
+            </HackathonGuard>
           }
         />
 
         <Route
           path="/hackathon/create"
           element={
-            <HackathonCreateEvent />
+            <HackathonGuard>
+              <HackathonCreateEvent />
+            </HackathonGuard>
           }
         />
 
         <Route
           path="/hackathon/:id/participants"
           element={
-            <HackathonParticipants />
+            <HackathonGuard>
+              <HackathonParticipants />
+            </HackathonGuard>
+          }
+        />
+
+        <Route
+          path="/hackathon/:id/certificates"
+          element={
+            <HackathonGuard>
+              <HackathonCertificates />
+            </HackathonGuard>
           }
         />
 
@@ -583,7 +594,7 @@ function App() {
         />
 
         {/* =================================================
-            UNKNOWN ROUTE
+            UNKNOWN
             ================================================= */}
 
         <Route
@@ -597,6 +608,7 @@ function App() {
         />
 
       </Routes>
+
     </BrowserRouter>
   );
 }

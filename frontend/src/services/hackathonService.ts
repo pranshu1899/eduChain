@@ -1,5 +1,10 @@
 import { ethers } from "ethers";
 
+// import { ethers } from "ethers";
+
+// import {
+//   anchorHackathonCertificateBatch,
+// } from "./hackathonOrganizationRegistry";
 import type {
   HackathonEvent,
   HackathonParticipant,
@@ -15,6 +20,10 @@ import {
   buildMerkleTree,
   createMerkleProof,
 } from "../utils/merkle";
+
+import {
+  anchorHackathonCertificateBatch,
+} from "./hackathonOrganizationRegistry";
 
 /* =====================================================
    STORAGE KEYS
@@ -754,3 +763,204 @@ export function clearHackathonData(): void {
     BATCHES_KEY,
   );
 }
+
+
+/* =====================================================
+   BLOCKCHAIN BATCH ID
+   ===================================================== */
+
+/**
+ * Converts the local batch identifier into a deterministic
+ * bytes32 identifier suitable for the blockchain contract.
+ *
+ * The local batch ID remains unchanged in localStorage.
+ * Only its blockchain representation is hashed.
+ */
+export function getHackathonBatchBlockchainId(
+  batchId: string,
+): string {
+  const normalized =
+    batchId.trim();
+
+  if (!normalized) {
+    throw new Error(
+      "Hackathon batch ID is required.",
+    );
+  }
+
+  return ethers.keccak256(
+    ethers.toUtf8Bytes(
+      `EDUPROOF_HACKATHON_BATCH:${normalized}`,
+    ),
+  );
+}
+
+/* =====================================================
+   ANCHOR GENERATED BATCH
+   ===================================================== */
+
+/**
+ * Anchors a locally generated certificate batch
+ * on Ethereum Sepolia.
+ *
+ * Only the Merkle root and batch metadata are written
+ * to the blockchain. Individual certificate data remains
+ * off-chain.
+ */
+export async function anchorGeneratedHackathonBatch(
+  batch: HackathonCertificateBatch,
+): Promise<HackathonCertificateBatch> {
+  if (!batch) {
+    throw new Error(
+      "Certificate batch is required.",
+    );
+  }
+
+  if (
+    batch.status ===
+    "ANCHORED"
+  ) {
+    throw new Error(
+      "This certificate batch is already anchored.",
+    );
+  }
+
+  if (
+    !batch.certificateHashes ||
+    batch.certificateHashes.length === 0
+  ) {
+    throw new Error(
+      "Cannot anchor an empty certificate batch.",
+    );
+  }
+
+  if (
+    batch.certificateCount !==
+    batch.certificateHashes.length
+  ) {
+    throw new Error(
+      "Certificate count does not match the number of certificate hashes.",
+    );
+  }
+
+  if (!batch.merkleRoot) {
+    throw new Error(
+      "Certificate batch Merkle root is missing.",
+    );
+  }
+
+  /*
+   * Recalculate the root before sending anything
+   * to MetaMask.
+   *
+   * This protects against localStorage or UI data
+   * being modified after the batch was generated.
+   */
+  const calculatedTree =
+    buildMerkleTree(
+      batch.certificateHashes,
+    );
+
+  const calculatedRoot =
+    calculatedTree.root;
+
+  if (
+    calculatedRoot.toLowerCase() !==
+    batch.merkleRoot.toLowerCase()
+  ) {
+    throw new Error(
+      "Certificate batch Merkle root is invalid. The certificate hashes do not match the stored root.",
+    );
+  }
+
+  const blockchainBatchId =
+    getHackathonBatchBlockchainId(
+      batch.id,
+    );
+
+  const result =
+    await anchorHackathonCertificateBatch(
+      blockchainBatchId,
+      batch.merkleRoot,
+      batch.certificateCount,
+      batch.metadataURI ?? "",
+    );
+
+  const updatedBatch:
+    HackathonCertificateBatch = {
+    ...batch,
+
+    status:
+      "ANCHORED",
+
+    anchoredAt:
+      Date.now(),
+
+    transactionHash:
+      result.transactionHash,
+
+    blockNumber:
+      result.blockNumber,
+  };
+
+  const batches =
+    getHackathonBatches();
+
+  const index =
+    batches.findIndex(
+      (item) =>
+        item.id ===
+        batch.id,
+    );
+
+  if (index === -1) {
+    throw new Error(
+      "Certificate batch was not found in local storage.",
+    );
+  }
+
+  batches[index] =
+    updatedBatch;
+
+  writeArray(
+    BATCHES_KEY,
+    batches,
+  );
+
+  return updatedBatch;
+}
+
+/* =====================================================
+   VERIFY LOCAL BATCH INTEGRITY
+   ===================================================== */
+
+/**
+ * Rebuilds the local Merkle tree and confirms that
+ * the stored batch root is still valid.
+ */
+export function verifyHackathonBatchIntegrity(
+  batch: HackathonCertificateBatch,
+): boolean {
+  try {
+    if (
+      !batch ||
+      !batch.merkleRoot ||
+      !batch.certificateHashes?.length
+    ) {
+      return false;
+    }
+
+    const tree =
+      buildMerkleTree(
+        batch.certificateHashes,
+      );
+
+    return (
+      tree.root.toLowerCase() ===
+      batch.merkleRoot.toLowerCase()
+    );
+  } catch {
+    return false;
+  }
+}
+

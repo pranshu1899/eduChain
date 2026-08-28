@@ -6,6 +6,7 @@ import {
 import type {
   FormEvent,
 } from "react";
+
 import {
   Link,
   useNavigate,
@@ -23,6 +24,8 @@ import type {
   HackathonEvent,
   HackathonParticipant,
 } from "../../types/hackathon";
+
+import HackathonLayout from "./HackathonLayout";
 
 export default function HackathonParticipants() {
   const {
@@ -50,32 +53,50 @@ export default function HackathonParticipants() {
       [],
     );
 
-  const [did, setDid] =
-    useState("");
+  const [
+    did,
+    setDid,
+  ] = useState("");
 
-  const [name, setName] =
-    useState("");
+  const [
+    name,
+    setName,
+  ] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-  const [team, setTeam] =
-    useState("");
+  const [
+    team,
+    setTeam,
+  ] = useState("");
 
-  const [project, setProject] =
-    useState("");
+  const [
+    project,
+    setProject,
+  ] = useState("");
 
-  const [result, setResult] =
-    useState("");
+  const [
+    result,
+    setResult,
+  ] = useState("");
 
-  const [rank, setRank] =
-    useState("");
+  const [
+    rank,
+    setRank,
+  ] = useState("");
 
-  const [award, setAward] =
-    useState("");
+  const [
+    award,
+    setAward,
+  ] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
   useEffect(() => {
     if (!id) {
@@ -87,7 +108,9 @@ export default function HackathonParticipants() {
     );
 
     setParticipants(
-      getHackathonParticipants(id),
+      getHackathonParticipants(
+        id,
+      ),
     );
   }, [id]);
 
@@ -149,6 +172,15 @@ export default function HackathonParticipants() {
   function handleRemove(
     participantId: string,
   ) {
+    const confirmed =
+      window.confirm(
+        "Remove this participant from the hackathon?",
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
     removeHackathonParticipant(
       participantId,
     );
@@ -165,7 +197,7 @@ export default function HackathonParticipants() {
 
   if (!hackathon) {
     return (
-      <div className="student-page-shell">
+      <HackathonLayout>
         <main className="student-main-content">
           <h1>
             Hackathon not found
@@ -174,36 +206,39 @@ export default function HackathonParticipants() {
           <button
             type="button"
             onClick={() =>
-              navigate("/hackathon")
+              navigate(
+                "/hackathon",
+              )
             }
           >
-            Back to Hackathons
+            Back to Hackathon Portal
           </button>
         </main>
-      </div>
+      </HackathonLayout>
     );
   }
 
   return (
-    <div className="student-page-shell">
+    <HackathonLayout>
       <main className="student-main-content">
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/hackathon")
-          }
-        >
-          ← Hackathons
-        </button>
+
+        {/* HEADER */}
 
         <div
           style={{
-            marginTop: "1.5rem",
             marginBottom: "2rem",
           }}
         >
+          <Link
+            to="/hackathon"
+          >
+            ← Hackathon Portal
+          </Link>
+
           <p
             style={{
+              marginTop: "1.5rem",
+              marginBottom: 0,
               opacity: 0.6,
               fontSize: "0.75rem",
               letterSpacing: "0.12em",
@@ -217,10 +252,67 @@ export default function HackathonParticipants() {
           </h1>
 
           <p>
-            Add students using their
-            decentralized identity.
+            Register students using their
+            decentralized identity before
+            generating the certificate batch.
           </p>
         </div>
+
+        {/* PROGRESS */}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(3, 1fr)",
+            gap: "0.75rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div
+            className="dashboard-card"
+          >
+            <strong>
+              01
+            </strong>
+
+            <p>
+              Add Participants
+            </p>
+          </div>
+
+          <div
+            className="dashboard-card"
+            style={{
+              opacity: 0.65,
+            }}
+          >
+            <strong>
+              02
+            </strong>
+
+            <p>
+              Generate Certificates
+            </p>
+          </div>
+
+          <div
+            className="dashboard-card"
+            style={{
+              opacity: 0.65,
+            }}
+          >
+            <strong>
+              03
+            </strong>
+
+            <p>
+              Anchor Merkle Batch
+            </p>
+          </div>
+        </div>
+
+        {/* ADD PARTICIPANT */}
 
         <section
           className="dashboard-card"
@@ -228,12 +320,30 @@ export default function HackathonParticipants() {
             marginBottom: "1.5rem",
           }}
         >
+          <p
+            style={{
+              opacity: 0.55,
+              fontSize: "0.7rem",
+              letterSpacing: "0.12em",
+            }}
+          >
+            STUDENT REGISTRATION
+          </p>
+
           <h2>
             Add Participant
           </h2>
 
+          <p>
+            The DID is the student's
+            decentralized identity and is used
+            as the primary identity reference.
+          </p>
+
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              handleSubmit
+            }
           >
             <div
               style={{
@@ -245,6 +355,7 @@ export default function HackathonParticipants() {
             >
               <label>
                 Student DID
+
                 <input
                   value={did}
                   onChange={(event) =>
@@ -259,6 +370,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Student Name
+
                 <input
                   value={name}
                   onChange={(event) =>
@@ -273,6 +385,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Email
+
                 <input
                   type="email"
                   value={email}
@@ -287,6 +400,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Team
+
                 <input
                   value={team}
                   onChange={(event) =>
@@ -300,6 +414,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Project
+
                 <input
                   value={project}
                   onChange={(event) =>
@@ -313,6 +428,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Result
+
                 <input
                   value={result}
                   onChange={(event) =>
@@ -326,6 +442,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Rank
+
                 <input
                   type="number"
                   min="1"
@@ -341,6 +458,7 @@ export default function HackathonParticipants() {
 
               <label>
                 Award
+
                 <input
                   value={award}
                   onChange={(event) =>
@@ -359,7 +477,8 @@ export default function HackathonParticipants() {
                 style={{
                   marginTop: "1rem",
                   padding: "0.9rem",
-                  borderRadius: "0.75rem",
+                  borderRadius:
+                    "0.75rem",
                 }}
               >
                 {error}
@@ -377,6 +496,8 @@ export default function HackathonParticipants() {
           </form>
         </section>
 
+        {/* PARTICIPANTS */}
+
         <section className="dashboard-card">
           <div
             style={{
@@ -385,23 +506,30 @@ export default function HackathonParticipants() {
                 "space-between",
               alignItems: "center",
               gap: "1rem",
+              flexWrap: "wrap",
               marginBottom: "1rem",
             }}
           >
             <div>
-              <h2>
-                Participants
-              </h2>
+              <p
+                style={{
+                  opacity: 0.55,
+                  fontSize: "0.7rem",
+                  letterSpacing:
+                    "0.12em",
+                }}
+              >
+                REGISTERED STUDENTS
+              </p>
 
-              <p>
+              <h2>
                 {participants.length}{" "}
-                student
+                Participant
                 {participants.length ===
                 1
                   ? ""
-                  : "s"}{" "}
-                registered
-              </p>
+                  : "s"}
+              </h2>
             </div>
 
             {participants.length >
@@ -409,17 +537,19 @@ export default function HackathonParticipants() {
               <Link
                 to={`/hackathon/${hackathon.id}/certificates`}
               >
-                Continue to Certificates →
+                Generate Certificates →
               </Link>
             )}
           </div>
 
           {participants.length ===
           0 ? (
-            <p>
-              No participants have been
-              added yet.
-            </p>
+            <div>
+              <p>
+                No participants have been
+                added yet.
+              </p>
+            </div>
           ) : (
             <div
               style={{
@@ -430,6 +560,7 @@ export default function HackathonParticipants() {
               {participants.map(
                 (
                   participant,
+                  index,
                 ) => (
                   <div
                     key={
@@ -439,78 +570,119 @@ export default function HackathonParticipants() {
                       padding:
                         "1rem",
                       border:
-                        "1px solid currentColor",
+                        "1px solid rgba(255,255,255,0.08)",
                       borderRadius:
                         "0.75rem",
-                      display:
-                        "flex",
-                      justifyContent:
-                        "space-between",
-                      alignItems:
-                        "center",
-                      gap: "1rem",
                     }}
                   >
-                    <div>
-                      <strong>
-                        {
-                          participant.name
-                        }
-                      </strong>
-
-                      <div
-                        style={{
-                          opacity:
-                            0.65,
-                          fontSize:
-                            "0.8rem",
-                          marginTop:
-                            "0.25rem",
-                        }}
-                      >
-                        {
-                          participant.did
-                        }
-                      </div>
-
-                      {(participant.team ||
-                        participant.project) && (
-                        <div
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        gap: "1rem",
+                        alignItems:
+                          "flex-start",
+                      }}
+                    >
+                      <div>
+                        <span
                           style={{
-                            marginTop:
-                              "0.35rem",
+                            opacity:
+                              0.45,
                             fontSize:
-                              "0.85rem",
+                              "0.7rem",
                           }}
                         >
-                          {participant.team &&
-                            `Team: ${participant.team}`}
-                          {participant.team &&
-                            participant.project &&
-                            " • "}
-                          {participant.project &&
-                            `Project: ${participant.project}`}
-                        </div>
-                      )}
-                    </div>
+                          #{index + 1}
+                        </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleRemove(
-                          participant.id,
-                        )
-                      }
-                    >
-                      Remove
-                    </button>
+                        <h3>
+                          {
+                            participant.name
+                          }
+                        </h3>
+
+                        <code
+                          style={{
+                            fontSize:
+                              "0.75rem",
+                            wordBreak:
+                              "break-all",
+                          }}
+                        >
+                          {
+                            participant.did
+                          }
+                        </code>
+
+                        {(participant.team ||
+                          participant.project ||
+                          participant.award) && (
+                          <p
+                            style={{
+                              opacity:
+                                0.7,
+                              fontSize:
+                                "0.8rem",
+                              marginTop:
+                                "0.5rem",
+                            }}
+                          >
+                            {participant.team &&
+                              `Team: ${participant.team}`}
+
+                            {participant.team &&
+                              participant.project &&
+                              " • "}
+
+                            {participant.project &&
+                              `Project: ${participant.project}`}
+
+                            {participant.award &&
+                              ` • ${participant.award}`}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemove(
+                            participant.id,
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ),
               )}
             </div>
           )}
         </section>
+
+        {/* NEXT STEP */}
+
+        {participants.length >
+          0 && (
+          <div
+            style={{
+              marginTop: "1.5rem",
+              display: "flex",
+              justifyContent:
+                "flex-end",
+            }}
+          >
+            <Link
+              to={`/hackathon/${hackathon.id}/certificates`}
+            >
+              Continue to Certificate Batch →
+            </Link>
+          </div>
+        )}
       </main>
-    </div>
+    </HackathonLayout>
   );
 }
