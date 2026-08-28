@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import UniversityLayout from "../../components/university/UniversityLayout";
 import UniversityStats from "../../components/university/UniversityStats";
-import StudentCredentialCard from "../../components/university/StudentCredentialCard";
 import { getReadOnlyContract } from "../../services/eduProof";
 
 interface LocalEthereumProvider {
@@ -59,7 +58,6 @@ function shortAddress(address: string) {
 }
 
 export default function UniversityDashboard() {
-  const navigate = useNavigate();
 
   const [walletAddress, setWalletAddress] = useState("");
   const [connected, setConnected] = useState(false);
@@ -316,9 +314,9 @@ export default function UniversityDashboard() {
           PAGE HEADER
           ================================================= */}
 
-      <section className="university-page-header">
+      <section className="dashboard-page-header">
         <div>
-          <span className="page-eyebrow">
+          <span className="dashboard-eyebrow">
             UNIVERSITY OVERVIEW
           </span>
 
@@ -332,17 +330,17 @@ export default function UniversityDashboard() {
           </p>
         </div>
 
-        <div className="university-page-actions">
+        <div style={{ display: "flex", gap: "12px" }}>
           <Link
             to="/university/verify"
-            className="secondary-button"
+            className="dashboard-btn-secondary"
           >
             Verify Credential
           </Link>
 
           <Link
             to="/university/issue"
-            className="primary-button"
+            className="dashboard-btn-primary"
           >
             + Issue Credential
           </Link>
@@ -377,21 +375,21 @@ export default function UniversityDashboard() {
           LOWER DASHBOARD
           ================================================= */}
 
-      <section className="university-dashboard-grid">
+      <section style={{ display: "grid", gridTemplateColumns: "1fr", gap: "32px", marginTop: "32px" }}>
 
         {/* =================================================
             RECENT CREDENTIALS
             ================================================= */}
 
-        <div className="university-panel">
+        <div style={{ display: "flex", flexDirection: "column" }}>
 
-          <div className="university-panel-header">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
             <div>
-              <h2>
+              <h2 style={{ fontSize: "24px", fontFamily: "'Space Grotesk', sans-serif", margin: "0 0 4px" }}>
                 Recent Credentials
               </h2>
 
-              <p>
+              <p style={{ margin: 0, color: "var(--text-soft)", fontSize: "14px" }}>
                 Latest credentials issued by your
                 institution.
               </p>
@@ -399,84 +397,63 @@ export default function UniversityDashboard() {
 
             <Link
               to="/university/credentials"
-              className="panel-link"
+              className="dashboard-btn-secondary"
+              style={{ textDecoration: "none" }}
             >
               View all →
             </Link>
           </div>
 
           {credentialsLoading ? (
-            <div className="university-empty-state">
-              <div className="credential-loading-spinner" />
-
-              <h3>
-                Loading credentials...
-              </h3>
-
-              <p>
-                Reading credential records from the
-                EduProof contract on Sepolia.
-              </p>
+            <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "16px" }}>⏳</div>
+              <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>Loading credentials...</h3>
+              <p style={{ margin: 0, color: "var(--text-soft)" }}>Reading credential records from the EduProof contract on Sepolia.</p>
             </div>
           ) : credentials.length === 0 ? (
-            <div className="university-empty-state">
-              <div className="empty-state-icon">
-                ▣
-              </div>
-
-              <h3>
-                No credentials issued
-              </h3>
-
-              <p>
-                Credentials issued by this university
-                will appear here.
-              </p>
-
-              <Link
-                to="/university/issue"
-                className="secondary-button"
-              >
-                Issue Credential
-              </Link>
-            </div>
+            <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>📝</div>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>No credentials issued</h3>
+            <p style={{ margin: "0 0 24px", color: "var(--text-soft)" }}>This university hasn't issued any blockchain credentials yet.</p>
+            <Link to="/university/issue" className="dashboard-btn-primary" style={{ textDecoration: "none" }}>
+              Issue first credential →
+            </Link>
+          </div>
           ) : (
-            <div className="university-credentials-list">
-              {credentials.map(
-                (credential) => (
-                  <StudentCredentialCard
-                    key={credential.id}
-                    id={credential.id}
-                    studentDID={
-                      credential.studentDID
-                    }
-                    credentialType={
-                      credential.credentialType
-                    }
-                    degree={
-                      credential.degree
-                    }
-                    institution={
-                      credential.institution
-                    }
-                    issueDate={
-                      credential.issueDate
-                    }
-                    version={
-                      credential.version
-                    }
-                    status={
-                      credential.status
-                    }
-                    onView={(id) => {
-                      navigate(
-                        `/university/credentials/${id}`
-                      );
-                    }}
-                  />
-                )
-              )}
-            </div>
+            <div className="dashboard-table-container">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>STATUS</th>
+                  <th>DEGREE</th>
+                  <th>STUDENT DID</th>
+                  <th>DATE</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {credentials.map((cred) => (
+                  <tr key={cred.id}>
+                    <td>
+                      <div className={`dashboard-badge ${cred.status === 2 ? 'error' : (cred.status === 1 ? 'info' : 'success')}`}>
+                        {cred.status === 2 ? "Revoked" : (cred.status === 1 ? "Updated" : "Valid")}
+                      </div>
+                    </td>
+                    <td style={{ fontWeight: 600, color: "var(--text)" }}>{cred.degree}</td>
+                    <td style={{ fontFamily: "monospace", color: "var(--text-muted)" }}>
+                      {cred.studentDID.slice(0, 10)}...{cred.studentDID.slice(-4)}
+                    </td>
+                    <td>{cred.issueDate}</td>
+                    <td>
+                      <Link to={`/university/credentials/${cred.id}`} style={{ color: "var(--primary)", textDecoration: "none", fontWeight: 600, fontSize: "13px" }}>
+                        View Details →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           )}
 
         </div>
@@ -485,87 +462,72 @@ export default function UniversityDashboard() {
             QUICK ACTIONS
             ================================================= */}
 
-        <div className="university-panel">
+        <div className="dashboard-card">
 
-          <div className="university-panel-header">
-            <div>
-              <h2>
+          <div style={{ marginBottom: "24px" }}>
+              <h2 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", margin: "0 0 4px" }}>
                 Quick Actions
               </h2>
-
-              <p>
+              <p style={{ margin: 0, color: "var(--text-soft)", fontSize: "14px" }}>
                 Common university operations.
               </p>
-            </div>
           </div>
 
           <Link
             to="/university/issue"
-            className="university-action-card"
+            className="dashboard-card"
+            style={{ display: "flex", alignItems: "center", gap: "16px", textDecoration: "none", marginBottom: "16px", background: "var(--bg-surface)" }}
           >
-            <div className="action-icon purple">
+            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(139, 92, 246, 0.1)", color: "var(--accent)", display: "grid", placeItems: "center", fontSize: "20px" }}>
               +
             </div>
 
             <div>
-              <strong>
+              <strong style={{ display: "block", color: "var(--text)", marginBottom: "4px" }}>
                 Issue Credential
               </strong>
-
-              <span>
-                Create a new academic credential
+              <span style={{ fontSize: "12px", color: "var(--text-soft)" }}>
+                Create a new blockchain record.
               </span>
             </div>
-
-            <span className="action-arrow">
-              →
-            </span>
           </Link>
 
           <Link
             to="/university/credentials"
-            className="university-action-card"
+            className="dashboard-card"
+            style={{ display: "flex", alignItems: "center", gap: "16px", textDecoration: "none", marginBottom: "16px", background: "var(--bg-surface)" }}
           >
-            <div className="action-icon blue">
+            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(59, 130, 246, 0.1)", color: "var(--secondary)", display: "grid", placeItems: "center", fontSize: "20px" }}>
               ▣
             </div>
 
             <div>
-              <strong>
+              <strong style={{ display: "block", color: "var(--text)", marginBottom: "4px" }}>
                 Manage Credentials
               </strong>
-
-              <span>
+              <span style={{ fontSize: "12px", color: "var(--text-soft)" }}>
                 View and manage issued records
               </span>
             </div>
-
-            <span className="action-arrow">
-              →
-            </span>
           </Link>
 
           <Link
             to="/university/verify"
-            className="university-action-card"
+            className="dashboard-card"
+            style={{ display: "flex", alignItems: "center", gap: "16px", textDecoration: "none", background: "var(--bg-surface)" }}
           >
-            <div className="action-icon green">
+            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(52, 211, 153, 0.1)", color: "var(--primary)", display: "grid", placeItems: "center", fontSize: "20px" }}>
               ✓
             </div>
 
             <div>
-              <strong>
+              <strong style={{ display: "block", color: "var(--text)", marginBottom: "4px" }}>
                 Verify Credential
               </strong>
-
-              <span>
+              <span style={{ fontSize: "12px", color: "var(--text-soft)" }}>
                 Validate an existing credential
               </span>
             </div>
-
-            <span className="action-arrow">
-              →
-            </span>
           </Link>
 
         </div>
@@ -576,10 +538,9 @@ export default function UniversityDashboard() {
           ================================================= */}
 
       {walletAddress && (
-        <div className="university-wallet-info">
-          Connected issuer:
-
-          <code>
+        <div style={{ marginTop: "48px", fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Connected issuer:</span>
+          <code style={{ background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: "6px" }}>
             {shortAddress(walletAddress)}
           </code>
 

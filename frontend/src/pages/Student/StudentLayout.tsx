@@ -157,34 +157,34 @@ export default function StudentLayout({
      ===================================================== */
 
   return (
-    <div className="student-page">
+    <div className="dashboard-shell">
 
       {/* =================================================
           SIDEBAR
           ================================================= */}
 
-      <aside className="student-sidebar">
+      <aside className="dashboard-sidebar">
 
         {/* =================================================
             BRAND
             ================================================= */}
 
-        <div className="student-sidebar-brand">
+        <div className="dashboard-brand">
 
           <Link
             to="/student"
-            className="student-brand"
+            style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "inherit" }}
           >
-            <div className="student-brand-mark">
+            <div className="dashboard-brand-mark">
               E
             </div>
 
             <div>
-              <div className="student-brand-name">
+              <div className="dashboard-brand-name">
                 EduProof
               </div>
 
-              <div className="student-brand-subtitle">
+              <div className="dashboard-brand-subtitle">
                 Academic Credential Network
               </div>
             </div>
@@ -197,11 +197,11 @@ export default function StudentLayout({
             ================================================= */}
 
         <nav
-          className="student-navigation"
+          className="dashboard-nav-group"
           aria-label="Student navigation"
         >
 
-          <div className="student-navigation-label">
+          <div className="dashboard-nav-label">
             STUDENT PORTAL
           </div>
 
@@ -213,8 +213,8 @@ export default function StudentLayout({
             to="/student"
             className={
               isOverviewActive
-                ? "student-nav-item active"
-                : "student-nav-item"
+                ? "dashboard-nav-item active"
+                : "dashboard-nav-item"
             }
             aria-current={
               isOverviewActive
@@ -222,13 +222,6 @@ export default function StudentLayout({
                 : undefined
             }
           >
-            <span
-              className="student-nav-icon"
-              aria-hidden="true"
-            >
-              ⌂
-            </span>
-
             <span>
               Overview
             </span>
@@ -242,8 +235,8 @@ export default function StudentLayout({
             to="/student/credentials"
             className={
               isCredentialsActive
-                ? "student-nav-item active"
-                : "student-nav-item"
+                ? "dashboard-nav-item active"
+                : "dashboard-nav-item"
             }
             aria-current={
               isCredentialsActive
@@ -251,13 +244,6 @@ export default function StudentLayout({
                 : undefined
             }
           >
-            <span
-              className="student-nav-icon"
-              aria-hidden="true"
-            >
-              ▣
-            </span>
-
             <span>
               My Credentials
             </span>
@@ -271,8 +257,8 @@ export default function StudentLayout({
             to="/student/evidence"
             className={
               isEvidenceActive
-                ? "student-nav-item active"
-                : "student-nav-item"
+                ? "dashboard-nav-item active"
+                : "dashboard-nav-item"
             }
             aria-current={
               isEvidenceActive
@@ -280,13 +266,6 @@ export default function StudentLayout({
                 : undefined
             }
           >
-            <span
-              className="student-nav-icon"
-              aria-hidden="true"
-            >
-              ◇
-            </span>
-
             <span>
               My Evidence
             </span>
@@ -300,8 +279,8 @@ export default function StudentLayout({
             to="/student/achievements"
             className={
               isAchievementActive
-                ? "student-nav-item active"
-                : "student-nav-item"
+                ? "dashboard-nav-item active"
+                : "dashboard-nav-item"
             }
             aria-current={
               isAchievementActive
@@ -309,13 +288,6 @@ export default function StudentLayout({
                 : undefined
             }
           >
-            <span
-              className="student-nav-icon"
-              aria-hidden="true"
-            >
-              ✦
-            </span>
-
             <span>
               Achievements
             </span>
@@ -327,110 +299,26 @@ export default function StudentLayout({
             ACHIEVEMENT QUICK ACTION
             ================================================= */}
 
-        <div className="student-achievement-sidebar-card">
-
-          <div
-            className="student-achievement-sidebar-icon"
-            aria-hidden="true"
-          >
-            ✦
-          </div>
-
-          <div>
-            <strong>
-              Proof of Achievement
-            </strong>
-
-            <p>
-              Combine verified evidence into
-              one cryptographic achievement.
-            </p>
-
-            <Link
-              to="/student/achievements"
-            >
-              View achievements →
-            </Link>
-          </div>
-
-        </div>
-
-        {/* =================================================
-            NETWORK
-            ================================================= */}
-
-        <div className="student-network-card">
-
-          <div
-            className="student-network-dot"
-            aria-hidden="true"
-          />
-
-          <div>
-            <small>
-              BLOCKCHAIN SECURED
-            </small>
-
-            <strong>
-              Sepolia Network
-            </strong>
-          </div>
-
-        </div>
-
-        {/* =================================================
-            WALLET
-            ================================================= */}
-
-        <div className="student-sidebar-wallet">
-
-          {connected ? (
-            <>
-              <div
-                className="student-wallet-avatar"
-                aria-hidden="true"
-              >
-                U
-              </div>
-
-              <div className="student-wallet-info">
-                <span>
-                  CONNECTED
-                </span>
-
-                <strong>
-                  {shortenAddress(
-                    displayWallet,
-                  )}
-                </strong>
-              </div>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="student-sidebar-connect"
-              onClick={() => {
-                void onConnect();
-              }}
-            >
-              Connect Wallet
-            </button>
-          )}
-
-        </div>
-
-        {/* =================================================
-            SIDEBAR FOOTER
-            ================================================= */}
-
-        <div className="student-sidebar-footer">
+        <div style={{ marginTop: "auto" }}>
 
           <button
             type="button"
             onClick={() => {
               navigate("/");
             }}
-            className="student-change-role"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+              width: "100%",
+              padding: "10px",
+              color: "var(--text-soft)",
+              fontSize: "12px",
+              fontWeight: 600,
+              textDecoration: "none",
+              display: "inline-block"
+            }}
           >
             ← Change role
           </button>
@@ -443,25 +331,25 @@ export default function StudentLayout({
           MAIN CONTENT AREA
           ===================================================== */}
 
-      <div className="student-content">
+      <div className="dashboard-main">
 
         {/* =================================================
             TOP BAR
             ================================================= */}
 
-        <header className="student-topbar">
+        <header className="dashboard-topbar">
 
-          <div className="student-breadcrumb">
+          <div style={{ fontSize: "12px", color: "var(--text-soft)" }}>
 
-            <Link to="/student">
+            <Link to="/student" style={{ color: "inherit", textDecoration: "none" }}>
               EduProof
             </Link>
 
-            <span aria-hidden="true">
+            <span aria-hidden="true" style={{ margin: "0 8px", opacity: 0.5 }}>
               /
             </span>
 
-            <strong>
+            <strong style={{ color: "var(--text)" }}>
               {isAchievementActive
                 ? "Achievements"
                 : isEvidenceActive
@@ -473,52 +361,44 @@ export default function StudentLayout({
 
           </div>
 
-          <div className="student-topbar-right">
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
 
             {/* =================================================
                 NETWORK STATUS
                 ================================================= */}
-
-            <div className="student-network-status">
-
-              <span
-                className="student-network-status-dot"
-                aria-hidden="true"
-              />
-
-              <span>
-                Ethereum Sepolia
-              </span>
-
-            </div>
+            <div className="dashboard-badge success">Ethereum Sepolia</div>
 
             {/* =================================================
                 CONNECTED WALLET
                 ================================================= */}
 
-            {connected && (
-              <div className="student-topbar-wallet">
+            {connected ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", paddingLeft: "16px", borderLeft: "1px solid var(--border)" }}>
 
-                <div
-                  className="student-topbar-avatar"
-                  aria-hidden="true"
-                >
-                  U
-                </div>
-
-                <div>
-                  <strong>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>CONNECTED WALLET</span>
+                  <strong style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text)" }}>
                     {shortenAddress(
                       displayWallet,
                     )}
                   </strong>
+                </div>
 
-                  <span>
-                    Connected
-                  </span>
+                <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--secondary-light)", color: "var(--secondary)", display: "grid", placeItems: "center", fontSize: "14px", fontWeight: 700 }}>
+                  S
                 </div>
 
               </div>
+            ) : (
+              <button
+                type="button"
+                className="dashboard-btn-secondary"
+                onClick={() => {
+                  void onConnect();
+                }}
+              >
+                Connect Wallet
+              </button>
             )}
 
           </div>
@@ -529,7 +409,7 @@ export default function StudentLayout({
             PAGE CONTENT
             ================================================= */}
 
-        <main className="student-main-content">
+        <main className="dashboard-content">
           {children}
         </main>
 

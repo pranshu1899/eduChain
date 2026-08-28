@@ -14,65 +14,29 @@ function shortAddress(address: string) {
 
 export default function UniversityTopbar({
   walletAddress,
-  connected,
 }: UniversityTopbarProps) {
   return (
-    <header className="university-topbar">
-
-      <div className="university-breadcrumb">
-        <Link to="/university">
-          EduProof
-        </Link>
-
-        <span>/</span>
-
-        <strong>University Portal</strong>
+    <header className="dashboard-topbar">
+      <div style={{ fontSize: "12px", color: "var(--text-soft)" }}>
+        <Link to="/university" style={{ color: "inherit", textDecoration: "none" }}>EduProof</Link>
+        <span style={{ margin: "0 8px", opacity: 0.5 }}>/</span>
+        <strong style={{ color: "var(--text)" }}>University Portal</strong>
       </div>
 
-      <div className="university-network">
-
-        <div className="network-info">
-          <span className="network-dot" />
-          <div>
-            <span className="network-label">
-              NETWORK
-            </span>
-
-            <strong>
-              Ethereum Sepolia
-            </strong>
-          </div>
-        </div>
-
-        <div className="wallet-info">
-
-          <div className="wallet-avatar">
-            U
-          </div>
-
-          <div className="wallet-details">
-            <span className="wallet-label">
-              UNIVERSITY ISSUER
-            </span>
-
-            <strong>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div className="dashboard-badge success">Ethereum Sepolia</div>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", paddingLeft: "16px", borderLeft: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em" }}>UNIVERSITY ISSUER</span>
+            <strong style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text)" }}>
               {shortAddress(walletAddress)}
             </strong>
           </div>
-
-          <span
-            className={
-              connected
-                ? "wallet-status connected"
-                : "wallet-status"
-            }
-          >
-            <span className="status-dot" />
-            {connected ? "Connected" : "Disconnected"}
-          </span>
-
+          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--primary-light)", color: "var(--primary)", display: "grid", placeItems: "center", fontSize: "14px", fontWeight: 700 }}>
+            U
+          </div>
         </div>
-
       </div>
     </header>
   );

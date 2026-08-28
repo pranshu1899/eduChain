@@ -14,16 +14,16 @@ export default function UniversityLayout({
   connected,
 }: UniversityLayoutProps) {
   return (
-    <div className="university-shell">
+    <div className="dashboard-shell">
       <UniversitySidebar />
 
-      <div className="university-main">
+      <div className="dashboard-main">
         <UniversityTopbar
           walletAddress={walletAddress}
           connected={connected}
         />
 
-        <main className="university-content">
+        <main className="dashboard-content">
           {children}
         </main>
       </div>

@@ -32,12 +32,12 @@ export default function HackathonLayout({
   }, []);
 
   function navClass({ isActive }: { isActive: boolean }) {
-    return isActive ? "student-nav-item active" : "student-nav-item";
+    return isActive ? "dashboard-nav-item active" : "dashboard-nav-item";
   }
 
   return (
-    <div className="student-shell">
-      <aside className="student-sidebar">
+    <div className="dashboard-shell">
+      <aside className="dashboard-sidebar">
         {/* BRAND */}
         <button
           type="button"
@@ -51,11 +51,11 @@ export default function HackathonLayout({
             color: "inherit",
           }}
         >
-          <div className="student-brand">
-            <div className="student-brand-mark">E</div>
+          <div className="dashboard-brand">
+            <div className="dashboard-brand-mark">E</div>
             <div>
-              <div className="student-brand-name">EduProof</div>
-              <div className="student-brand-subtitle">Academic Credential Network</div>
+              <div className="dashboard-brand-name">EduProof</div>
+              <div className="dashboard-brand-subtitle">Academic Credential Network</div>
             </div>
           </div>
         </button>
@@ -94,30 +94,29 @@ export default function HackathonLayout({
           </div>
         </div>
 
-        <div className="student-portal-label" style={{ marginTop: 0 }}>OVERVIEW</div>
+        <div className="dashboard-nav-label" style={{ marginTop: 0 }}>OVERVIEW</div>
 
         {/* NAVIGATION */}
-        <nav className="student-navigation">
+        <nav className="dashboard-nav-group">
           <NavLink to="/hackathon" end className={navClass}>
-            <span className="student-nav-icon">⌂</span>
+            Overview
+          </NavLink>
+          <NavLink to="/hackathon/create" className={navClass}>
             Hackathons
           </NavLink>
-          <div className="student-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
-            <span className="student-nav-icon">👥</span>
+          <div className="dashboard-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
             Participants
           </div>
-          <div className="student-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
-            <span className="student-nav-icon">🔐</span>
+          <div className="dashboard-nav-item" style={{ opacity: 0.5, cursor: "not-allowed" }}>
             Certificate Batches
           </div>
         </nav>
 
         {/* BACK */}
-        <div className="student-sidebar-bottom">
+        <div style={{ marginTop: "auto" }}>
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="student-change-role"
             style={{
               background: "transparent",
               border: "none",
@@ -125,6 +124,9 @@ export default function HackathonLayout({
               textAlign: "left",
               width: "100%",
               padding: "10px",
+              color: "var(--text-soft)",
+              fontSize: "12px",
+              fontWeight: 600,
             }}
           >
             ← Change Role
@@ -132,8 +134,21 @@ export default function HackathonLayout({
         </div>
       </aside>
 
-      <div className="student-main">
-        <main className="student-content">
+      <div className="dashboard-main">
+        <header className="dashboard-topbar">
+          <div style={{ fontSize: "12px", color: "var(--text-soft)" }}>
+            Hackathon Organization
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div className="dashboard-badge success">Ethereum Sepolia</div>
+            <div style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--text-soft)" }}>
+              {wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "..."}
+            </div>
+          </div>
+        </header>
+
+        <main className="dashboard-content">
           {children}
         </main>
       </div>

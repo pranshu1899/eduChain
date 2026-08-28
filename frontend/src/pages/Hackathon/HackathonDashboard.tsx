@@ -207,16 +207,16 @@ export default function HackathonDashboard() {
 
         {/* HEADER */}
 
-        <section className="student-page-header">
+        <section className="dashboard-page-header">
           <div>
-            <div className="student-page-eyebrow">HACKATHON ORGANIZATION</div>
+            <div className="dashboard-eyebrow">HACKATHON ORGANIZATION</div>
             <h1>{organizationName}</h1>
             <p>
               Create hackathons, register students, and issue cryptographically verifiable certificates.
             </p>
           </div>
           <div>
-            <Link to="/hackathon/create" className="student-connect-large" style={{ textDecoration: "none", display: "inline-block" }}>
+            <Link to="/hackathon/create" className="dashboard-btn-primary" style={{ textDecoration: "none" }}>
               + Create Hackathon
             </Link>
           </div>
@@ -230,20 +230,20 @@ export default function HackathonDashboard() {
             <p style={{ margin: 0, color: "rgba(245,247,255,0.4)", fontSize: "13px" }}>Your hackathon network at a glance.</p>
           </div>
 
-          <div className="student-stat-grid">
-            <div className="student-stat-card purple">
+          <div className="dashboard-stat-grid">
+            <div className="dashboard-stat-card violet">
               <span>HACKATHONS</span>
               <strong>{hackathons.length}</strong>
               <p>Total events</p>
             </div>
 
-            <div className="student-stat-card green">
+            <div className="dashboard-stat-card teal">
               <span>PARTICIPANTS</span>
               <strong>{totalParticipants}</strong>
               <p>Total registered</p>
             </div>
 
-            <div className="student-stat-card yellow">
+            <div className="dashboard-stat-card amber">
               <span>CERT BATCHES</span>
               <strong>{totalBatches}</strong>
               <p>Merkle roots</p>
@@ -260,51 +260,50 @@ export default function HackathonDashboard() {
           </div>
 
           {hackathons.length === 0 ? (
-            <div className="student-empty">
-              <div className="student-empty-icon">📅</div>
-              <h3>No hackathons yet</h3>
-              <p>Create your first event to start registering students and issuing certificates.</p>
-              <Link to="/hackathon/create" style={{ color: "#9c96ff", textDecoration: "none", fontSize: "12px", fontWeight: 700, marginTop: "8px" }}>
+            <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "16px" }}>📅</div>
+              <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>No hackathons yet</h3>
+              <p style={{ margin: "0 0 24px", color: "var(--text-soft)" }}>Create your first event to start registering students and issuing certificates.</p>
+              <Link to="/hackathon/create" className="dashboard-btn-primary" style={{ textDecoration: "none" }}>
                 Create your first hackathon →
               </Link>
             </div>
           ) : (
-            <div className="student-credential-grid">
+            <div className="dashboard-stat-grid">
               {hackathons.map((hackathon) => {
                 const participantCount = getHackathonParticipants(hackathon.id).length;
                 const batches = getHackathonBatches().filter((batch) => batch.hackathonId === hackathon.id);
                 const latestBatch = batches[0];
 
                 return (
-                  <article className="student-credential-card" key={hackathon.id} style={{ display: "flex", flexDirection: "column" }}>
-                    <div className="student-credential-top">
-                      <span>HACKATHON</span>
-                      <div className={`student-status ${latestBatch ? 'active' : ''}`}>
-                        <span></span>
+                  <article className="dashboard-card" key={hackathon.id} style={{ display: "flex", flexDirection: "column", padding: "20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-muted)" }}>HACKATHON</span>
+                      <div className={`dashboard-badge ${latestBatch ? 'success' : 'info'}`}>
                         {latestBatch ? latestBatch.status : "No batch"}
                       </div>
                     </div>
 
-                    <h3>{hackathon.name}</h3>
-                    <p style={{ flex: 1, marginBottom: "16px" }}>{hackathon.description}</p>
+                    <h3 style={{ margin: "0 0 8px", fontSize: "18px", fontFamily: "'Space Grotesk', sans-serif" }}>{hackathon.name}</h3>
+                    <p style={{ margin: "0 0 24px", color: "var(--text-soft)", fontSize: "13px", flex: 1 }}>{hackathon.description}</p>
 
-                    <div className="student-credential-details" style={{ marginTop: "auto" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", padding: "16px 0", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", marginBottom: "16px" }}>
                       <div>
-                        <span>DATE</span>
-                        <strong>{hackathon.eventDate}</strong>
+                        <span style={{ display: "block", fontSize: "9px", color: "var(--text-muted)", fontWeight: 700, marginBottom: "4px" }}>DATE</span>
+                        <strong style={{ fontSize: "12px" }}>{hackathon.eventDate}</strong>
                       </div>
                       <div>
-                        <span>PEOPLE</span>
-                        <strong>{participantCount}</strong>
+                        <span style={{ display: "block", fontSize: "9px", color: "var(--text-muted)", fontWeight: 700, marginBottom: "4px" }}>PEOPLE</span>
+                        <strong style={{ fontSize: "12px" }}>{participantCount}</strong>
                       </div>
                       <div>
-                        <span>VENUE</span>
-                        <strong>{hackathon.venue || "TBD"}</strong>
+                        <span style={{ display: "block", fontSize: "9px", color: "var(--text-muted)", fontWeight: 700, marginBottom: "4px" }}>VENUE</span>
+                        <strong style={{ fontSize: "12px" }}>{hackathon.venue || "TBD"}</strong>
                       </div>
                     </div>
 
-                    <div className="student-card-action">
-                      <Link to={`/hackathon/${hackathon.id}/participants`} style={{ color: "inherit", textDecoration: "none" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Link to={`/hackathon/${hackathon.id}/participants`} className="dashboard-btn-secondary" style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}>
                         Manage Event →
                       </Link>
                     </div>

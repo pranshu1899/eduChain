@@ -69,21 +69,6 @@ function statusText(status: number) {
   return "UNKNOWN";
 }
 
-function statusClass(status: number) {
-  if (status === 0) {
-    return "active";
-  }
-
-  if (status === 1) {
-    return "revoked";
-  }
-
-  if (status === 2) {
-    return "superseded";
-  }
-
-  return "unknown";
-}
 
 function formatDate(date: string) {
   if (!date) {
@@ -520,11 +505,11 @@ export default function StudentDashboard() {
           HEADER
           ================================================= */}
 
-      <section className="student-page-header">
+      <section className="dashboard-page-header">
 
         <div>
 
-          <span className="student-page-eyebrow">
+          <span className="dashboard-eyebrow">
             STUDENT OVERVIEW
           </span>
 
@@ -542,81 +527,62 @@ export default function StudentDashboard() {
       </section>
 
       {/* =================================================
-          WALLET
+          IDENTITY & WALLET
           ================================================= */}
 
-      <section className="student-identity-card">
+      <section className="dashboard-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", background: "linear-gradient(to right, rgba(52, 211, 153, 0.05), rgba(139, 92, 246, 0.05))" }}>
 
-        <div className="student-identity-main">
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
 
-          <div className="student-identity-icon">
+          <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "rgba(59, 130, 246, 0.1)", color: "var(--secondary)", display: "grid", placeItems: "center", fontSize: "32px", boxShadow: "0 0 20px rgba(59, 130, 246, 0.2)" }}>
             🎓
           </div>
 
           <div>
 
-            <span>
-              CREDENTIAL OWNER
+            <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em" }}>
+              VERIFIED ACADEMIC IDENTITY
             </span>
 
-            <h2>
+            <h2 style={{ fontSize: "24px", fontFamily: "'Space Grotesk', sans-serif", margin: "4px 0 8px", color: "var(--text)" }}>
               {connected
-                ? "Student Wallet Connected"
+                ? "Student Profile"
                 : "Wallet Not Connected"}
             </h2>
 
-            <p>
-              {walletAddress ||
-                "Connect MetaMask to access your credentials."}
-            </p>
+            <div style={{ display: "flex", gap: "16px", fontSize: "13px", color: "var(--text-soft)" }}>
+              {connected && studentDID && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ opacity: 0.6 }}>DID:</span>
+                  <code style={{ fontFamily: "monospace", color: "var(--secondary-light)" }}>{studentDID}</code>
+                </div>
+              )}
+              {walletAddress && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ opacity: 0.6 }}>Wallet:</span>
+                  <code style={{ fontFamily: "monospace", color: "var(--text)" }}>{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
+                </div>
+              )}
+              {!connected && (
+                <p style={{ margin: 0 }}>Connect MetaMask to access your credentials.</p>
+              )}
+            </div>
 
           </div>
 
         </div>
 
         {!connected && (
-
           <button
             type="button"
-            className="student-connect-large"
-            onClick={
-              connectWallet
-            }
+            className="dashboard-btn-primary"
+            onClick={connectWallet}
           >
             Connect MetaMask
           </button>
-
         )}
 
       </section>
-
-      {/* =================================================
-          DID
-          ================================================= */}
-
-      {connected && (
-
-        <section className="student-did-card">
-
-          <div>
-
-            <span>
-              YOUR EDUPROOF DID
-            </span>
-
-            <strong>
-              {studentDID}
-            </strong>
-
-          </div>
-
-          <div className="student-did-badge">
-            DID
-          </div>
-
-        </section>
-
-      )}
 
       {/* =================================================
           ERROR
@@ -650,67 +616,67 @@ export default function StudentDashboard() {
           STATISTICS
           ================================================= */}
 
-      <section className="student-stat-grid">
+      <section className="dashboard-stat-grid" style={{ marginBottom: "48px" }}>
 
-        <div className="student-stat-card purple">
+        <div className="dashboard-card">
 
-          <span>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em", display: "block", marginBottom: "8px" }}>
             TOTAL CREDENTIALS
           </span>
 
-          <strong>
+          <strong style={{ fontSize: "36px", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1, color: "var(--text)", display: "block", marginBottom: "8px" }}>
             {credentials.length}
           </strong>
 
-          <p>
-            Credentials associated with your DID
+          <p style={{ fontSize: "12px", color: "var(--text-soft)", margin: 0 }}>
+            Issued to your DID
           </p>
 
         </div>
 
-        <div className="student-stat-card green">
+        <div className="dashboard-card">
 
-          <span>
-            ACTIVE
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--primary)", letterSpacing: "0.05em", display: "block", marginBottom: "8px" }}>
+            ACTIVE & VERIFIED
           </span>
 
-          <strong>
+          <strong style={{ fontSize: "36px", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1, color: "var(--text)", display: "block", marginBottom: "8px" }}>
             {activeCredentials.length}
           </strong>
 
-          <p>
+          <p style={{ fontSize: "12px", color: "var(--text-soft)", margin: 0 }}>
             Currently valid credentials
           </p>
 
         </div>
 
-        <div className="student-stat-card yellow">
+        <div className="dashboard-card">
 
-          <span>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--pending)", letterSpacing: "0.05em", display: "block", marginBottom: "8px" }}>
             SUPERSEDED
           </span>
 
-          <strong>
+          <strong style={{ fontSize: "36px", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1, color: "var(--text)", display: "block", marginBottom: "8px" }}>
             {supersededCredentials.length}
           </strong>
 
-          <p>
+          <p style={{ fontSize: "12px", color: "var(--text-soft)", margin: 0 }}>
             Replaced by newer versions
           </p>
 
         </div>
 
-        <div className="student-stat-card red">
+        <div className="dashboard-card">
 
-          <span>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--error)", letterSpacing: "0.05em", display: "block", marginBottom: "8px" }}>
             REVOKED
           </span>
 
-          <strong>
+          <strong style={{ fontSize: "36px", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1, color: "var(--text)", display: "block", marginBottom: "8px" }}>
             {revokedCredentials.length}
           </strong>
 
-          <p>
+          <p style={{ fontSize: "12px", color: "var(--text-soft)", margin: 0 }}>
             Revoked on-chain
           </p>
 
@@ -722,74 +688,58 @@ export default function StudentDashboard() {
           CREDENTIALS
           ================================================= */}
 
-      <section className="student-panel">
+      <section>
 
-        <div className="student-panel-header">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
 
           <div>
-
-            <span>
-              BLOCKCHAIN RECORDS
-            </span>
-
-            <h2>
+            <h2 style={{ fontSize: "24px", fontFamily: "'Space Grotesk', sans-serif", margin: "0 0 4px", color: "var(--text)" }}>
               My Academic Credentials
             </h2>
-
-            <p>
+            <p style={{ margin: 0, color: "var(--text-soft)", fontSize: "14px" }}>
               Credentials issued to your EduProof DID.
             </p>
-
           </div>
 
           {credentials.length > 0 && (
-
             <Link
               to="/student/credentials"
-              className="student-view-all"
+              className="dashboard-btn-secondary"
             >
               View all →
             </Link>
-
           )}
 
         </div>
 
         {loading ? (
 
-          <div className="student-loading">
-
-            <div className="credential-loading-spinner" />
-
-            <p>
-              Reading credentials from Sepolia...
-            </p>
-
+          <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>⏳</div>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>Loading credentials...</h3>
+            <p style={{ margin: 0, color: "var(--text-soft)" }}>Reading credentials from Sepolia...</p>
           </div>
 
         ) : !connected ? (
 
-          <div className="student-empty">
+          <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
 
-            <div className="student-empty-icon">
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>
               🔐
             </div>
 
-            <h3>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", color: "var(--text)" }}>
               Connect your wallet
             </h3>
 
-            <p>
-              Connect your student wallet to load
-              blockchain credentials.
+            <p style={{ margin: "0 0 24px", color: "var(--text-soft)" }}>
+              Connect your student wallet to load blockchain credentials.
             </p>
 
             <button
               type="button"
-              className="student-connect-large"
-              onClick={
-                connectWallet
-              }
+              className="dashboard-btn-primary"
+              onClick={connectWallet}
             >
               Connect Wallet
             </button>
@@ -798,126 +748,71 @@ export default function StudentDashboard() {
 
         ) : credentials.length === 0 ? (
 
-          <div className="student-empty">
+          <div className="dashboard-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 24px" }}>
 
-            <div className="student-empty-icon">
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>
               🎓
             </div>
 
-            <h3>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", color: "var(--text)" }}>
               No credentials found
             </h3>
 
-            <p>
-              No academic credentials are currently
-              associated with this student DID.
+            <p style={{ margin: 0, color: "var(--text-soft)" }}>
+              No academic credentials are currently associated with this student DID.
             </p>
 
           </div>
 
         ) : (
 
-          <div className="student-credential-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "24px" }}>
 
             {credentials.map(
               (credential) => (
 
                 <Link
-                  key={
-                    credential.id
-                  }
+                  key={credential.id}
                   to={`/student/credentials/${credential.id}`}
-                  className="student-credential-card"
+                  className="dashboard-card"
+                  style={{ textDecoration: "none", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s" }}
                 >
-
-                  <div className="student-credential-top">
-
-                    <span>
-                      CREDENTIAL #
-                      {
-                        credential.id
-                      }
+                  <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "4px", background: credential.status === 0 ? "var(--primary)" : (credential.status === 1 ? "var(--error)" : "var(--pending)") }}></div>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em" }}>
+                      CREDENTIAL #{credential.id}
                     </span>
-
-                    <span
-                      className={`student-status ${statusClass(
-                        credential.status,
-                      )}`}
-                    >
-
-                      <span />
-
-                      {statusText(
-                        credential.status,
-                      )}
-
-                    </span>
-
+                    <div className={`dashboard-badge ${credential.status === 0 ? 'success' : (credential.status === 1 ? 'error' : 'warning')}`}>
+                      {statusText(credential.status)}
+                    </div>
                   </div>
 
-                  <h3>
+                  <h3 style={{ margin: "0 0 8px", fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", color: "var(--text)", lineHeight: 1.3 }}>
                     {credential.degree}
                   </h3>
 
-                  <p>
-                    {credential.institution}
+                  <p style={{ margin: "0 0 24px", color: "var(--text-soft)", fontSize: "14px" }}>
+                    Issued by {credential.institution}
                   </p>
 
-                  <div className="student-credential-details">
-
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px", flex: 1, alignContent: "start" }}>
                     <div>
-
-                      <span>
-                        TYPE
-                      </span>
-
-                      <strong>
-                        {
-                          credential.credentialType
-                        }
-                      </strong>
-
+                      <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>TYPE</span>
+                      <strong style={{ fontSize: "13px", color: "var(--text)" }}>{credential.credentialType}</strong>
                     </div>
-
                     <div>
-
-                      <span>
-                        VERSION
-                      </span>
-
-                      <strong>
-                        v
-                        {
-                          credential.version
-                        }
-                      </strong>
-
+                      <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>VERSION</span>
+                      <strong style={{ fontSize: "13px", color: "var(--text)" }}>v{credential.version}</strong>
                     </div>
-
                     <div>
-
-                      <span>
-                        ISSUED
-                      </span>
-
-                      <strong>
-                        {formatDate(
-                          credential.issueDate,
-                        )}
-                      </strong>
-
+                      <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>ISSUED</span>
+                      <strong style={{ fontSize: "13px", color: "var(--text)" }}>{formatDate(credential.issueDate)}</strong>
                     </div>
-
                   </div>
 
-                  <div className="student-card-action">
-
-                    View Credential
-
-                    <span>
-                      →
-                    </span>
-
+                  <div style={{ paddingTop: "16px", borderTop: "1px solid var(--border)", color: "var(--secondary-light)", fontSize: "13px", fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    View Blockchain Proof <span>→</span>
                   </div>
 
                 </Link>

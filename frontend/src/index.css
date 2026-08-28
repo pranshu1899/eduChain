@@ -2,8 +2,8 @@
 
 :root {
   font-family: "DM Sans", sans-serif;
-  color: #f5f7ff;
-  background: #070914;
+  color: #F8FAFC;
+  background: #050A14;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,12 +23,12 @@ body,
 }
 
 html {
-  background: #070914;
+  background: #050A14;
 }
 
 body {
   margin: 0;
-  background: #070914;
+  background: #050A14;
 }
 
 button,

@@ -31,41 +31,37 @@ const items = [
 
 export default function UniversitySidebar() {
   return (
-    <aside className="university-sidebar">
+    <aside className="dashboard-sidebar">
       {/* ================= BRAND ================= */}
-      <div className="university-brand">
-        <div className="university-brand-mark">E</div>
+      <div className="dashboard-brand">
+        <div className="dashboard-brand-mark">E</div>
 
-        <div className="university-brand-copy">
-          <div className="university-brand-name">EduProof</div>
+        <div>
+          <div className="dashboard-brand-name">EduProof</div>
 
-          <div className="university-brand-subtitle">
+          <div className="dashboard-brand-subtitle">
             Academic Credential Network
           </div>
         </div>
       </div>
 
       {/* ================= PORTAL LABEL ================= */}
-      <div className="university-sidebar-section">
-        <span>UNIVERSITY PORTAL</span>
+      <div className="dashboard-nav-label">
+        UNIVERSITY PORTAL
       </div>
 
       {/* ================= NAVIGATION ================= */}
-      <nav className="university-navigation">
+      <nav className="dashboard-nav-group">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `university-nav-item ${isActive ? "active" : ""}`
+              `dashboard-nav-item ${isActive ? "active" : ""}`
             }
           >
-            <span className="university-nav-icon">
-              {item.icon}
-            </span>
-
-            <span className="university-nav-label">
+            <span>
               {item.label}
             </span>
           </NavLink>
@@ -73,30 +69,25 @@ export default function UniversitySidebar() {
       </nav>
 
       {/* ================= BOTTOM AREA ================= */}
-      <div className="university-sidebar-bottom">
-
-        {/* Network status */}
-        <div className="university-security-card">
-          <div className="security-icon">
-            <span />
-          </div>
-
-          <div className="security-content">
-            <strong>Blockchain secured</strong>
-            <span>Sepolia Network</span>
-          </div>
-
-          <div className="security-status-dot" />
-        </div>
-
+      <div style={{ marginTop: "auto" }}>
         {/* Change role */}
         <NavLink
           to="/"
-          className="university-change-role"
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "left",
+            width: "100%",
+            padding: "10px",
+            color: "var(--text-soft)",
+            fontSize: "12px",
+            fontWeight: 600,
+            textDecoration: "none",
+            display: "inline-block"
+          }}
         >
-          <span className="change-role-icon">←</span>
-
-          <span>Change role</span>
+          ← Change role
         </NavLink>
       </div>
     </aside>
